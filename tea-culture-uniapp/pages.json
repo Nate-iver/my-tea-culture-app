@@ -1,0 +1,197 @@
+{
+	"easycom": {
+		"autoscan": true,
+		"custom": {
+			"^u-(.*)": "uview-plus/components/u-$1/u-$1.vue"
+		}
+	},
+	"pages": [
+		{
+			"path": "pages/index/index",
+			"style": {
+				"navigationBarTitleText": "茶韵首页"
+			}
+		},
+		{
+			"path": "pages/tea/tea",
+			"style": {
+				"navigationBarTitleText": "茶道百科"
+			}
+		},
+		{
+			"path": "pages/tea/detail/detail",
+			"style": {
+				"navigationBarTitleText": "详情"
+			}
+		},
+		{
+			"path": "pages/content/list/list",
+			"style": {
+				"navigationBarTitleText": "茶学知识"
+			}
+		},
+		{
+			"path": "pages/community/community",
+			"style": {
+				"navigationBarTitleText": "茶友社区"
+			}
+		},
+		{
+			"path": "pages/community/teaparty/teaparty",
+			"style": {
+				"navigationBarTitleText": "线下茶会"
+			}
+		},
+		{
+			"path": "pages/service/service",
+			"style": {
+				"navigationBarTitleText": "茶文化服务"
+			}
+		},
+		{
+			"path": "pages/profile/profile",
+			"style": {
+				"navigationBarTitleText": "个人中心"
+			}
+		},
+		{
+			"path": "pages/login/login",
+			"style": {
+				"navigationBarTitleText": "用户登录"
+			}
+		},
+		{
+			"path": "pages/community/post/post",
+			"style": {
+				"navigationBarTitleText": "发布动态"
+			}
+		},
+		{
+			"path": "pages/community/detail/detail",
+			"style": {
+				"navigationBarTitleText": "动态详情"
+			}
+		},
+		{
+			"path": "pages/learning/learning",
+			"style": {
+				"navigationBarTitleText": "茶艺学堂"
+			}
+		},
+		{
+			"path": "pages/learning/detail/detail",
+			"style": {
+				"navigationBarTitleText": "课程详情"
+			}
+		},
+		{
+			"path": "pages/profile/my-orders",
+			"style": {
+				"navigationBarTitleText": "我的订单"
+			}
+		},
+		{
+			"path": "pages/profile/my-posts",
+			"style": {
+				"navigationBarTitleText": "我的发布"
+			}
+		},
+		{
+			"path": "pages/profile/order-detail",
+			"style": {
+				"navigationBarTitleText": "订单详情"
+			}
+		},
+		{
+			"path": "pages/admin/index",
+			"style": {
+				"navigationBarTitleText": "管理员后台"
+			}
+		},
+		{
+			"path": "pages/admin/products/index",
+			"style": {
+				"navigationBarTitleText": "产品管理"
+			}
+		},
+		{
+			"path": "pages/admin/products/edit",
+			"style": {
+				"navigationBarTitleText": "编辑产品"
+			}
+		},
+		{
+			"path": "pages/admin/orders/index",
+			"style": {
+				"navigationBarTitleText": "订单管理"
+			}
+		},
+		{
+			"path": "pages/admin/certificates/index",
+			"style": {
+				"navigationBarTitleText": "认证课程管理"
+			}
+		},
+		{
+			"path": "pages/admin/events/index",
+			"style": {
+				"navigationBarTitleText": "事件管理"
+			}
+		},
+		{
+			"path": "pages/admin/users/index",
+			"style": {
+				"navigationBarTitleText": "用户管理"
+			}
+		},
+		{
+			"path": "pages/admin/feedback/index",
+			"style": {
+				"navigationBarTitleText": "用户反馈管理"
+			}
+		},
+		{
+			"path": "pages/profile/feedback",
+			"style": {
+				"navigationBarTitleText": "意见反馈"
+			}
+		}
+	],
+	"globalStyle": {
+		"navigationBarTextStyle": "black",
+		"navigationBarTitleText": "茶文化平台",
+		"navigationBarBackgroundColor": "#F8F8F8",
+		"backgroundColor": "#F8F8F8"
+	},
+	"tabBar": {
+		"color": "#7A7E83",
+		"selectedColor": "#5d8a6a",
+		"backgroundColor": "#ffffff",
+		"borderStyle": "black",
+		"list": [{
+				"pagePath": "pages/index/index",
+				"text": "首页",
+				"iconPath": "static/tabbar/home.png",
+				"selectedIconPath": "static/tabbar/home-active.png"
+			},
+			{
+				"pagePath": "pages/learning/learning",
+				"text": "学习",
+				"iconPath": "static/tabbar/learn.png",
+				"selectedIconPath": "static/tabbar/learn-active.png"
+			},
+			{
+				"pagePath": "pages/community/community",
+				"text": "社区",
+				"iconPath": "static/tabbar/community.png",
+				"selectedIconPath": "static/tabbar/community-active.png"
+			},
+			{
+				"pagePath": "pages/profile/profile",
+				"text": "我的",
+				"iconPath": "static/tabbar/profile.png",
+				"selectedIconPath": "static/tabbar/profile-active.png"
+			}
+		]
+	}
+}

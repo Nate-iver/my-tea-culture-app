@@ -1,0 +1,30 @@
+# --- Python 相关 ---
+__pycache__/
+*.py[oc]
+.venv/
+.env
+
+# --- AI 模型相关 (非常重要！不要上传几百MB的模型数据) ---
+# 过滤掉存放 Hugging Face 模型的文件夹
+hf_models/
+*.bin
+*.pth
+*.safetensors
+*.onnx
+
+# --- Node.js / Express 相关 ---
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# --- 系统与编辑器相关 ---
+.DS_Store
+.vscode/
+.idea/
+*.swp
+
+# --- 编译与临时文件 ---
+build/
+dist/
+*.egg-info/
