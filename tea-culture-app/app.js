@@ -14,6 +14,7 @@ const certEnrollRoutes = require('./routes/certEnroll');
 const feedbackRoutes = require('./routes/feedback');
 const commentRoutes = require('./routes/comment');
 const orderRoutes = require('./routes/order');
+const { searchTea } = require('./services/searchService');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -35,6 +36,18 @@ app.use('/api/certEnroll', certEnrollRoutes);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api', commentRoutes);
+
+app.get('/api/search/tea', async (req, res) => {
+  try {
+    const keyword = req.query.keyword;
+    const results = await searchTea(keyword);
+    res.json(results);
+  } catch (error) {
+    res.status(500).json({
+      error: error.message || '茶叶搜索失败'
+    });
+  }
+});
 
 app.get('/', (req, res) => {
   res.send("Tea Culture API Running")
