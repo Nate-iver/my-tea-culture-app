@@ -129,7 +129,8 @@ const quickNavs = ref([
   { id: 3, name: '茶友社区', icon: 'chat', url: '/pages/community/community', color: '#4c9aff' },
   { id: 4, name: '茶叶购买', icon: 'shopping-cart', url: '/pages/service/service', color: '#ffc107' },
   { id: 5, name: '茶具商城', icon: 'gift', url: '/pages/service/service?tab=1', color: '#9c27b0' },
-  { id: 6, name: '茶艺认证', icon: 'medal', url: '/pages/service/service?tab=2', color: '#ff9800' }
+  { id: 6, name: '茶艺认证', icon: 'medal', url: '/pages/service/service?tab=2', color: '#ff9800' },
+  { id: 7, name: 'AI问茶', icon: 'chat-fill', url: '/pages/ai-chat/index', color: '#66bb6a' }
 ]);
 
 const formatType = (type) => {

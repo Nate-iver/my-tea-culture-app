@@ -28,3 +28,12 @@ yarn-error.log*
 build/
 dist/
 *.egg-info/
+
+
+# --- 项目特定数据文件 ---
+# 忽略抓取的原始语料和生成的向量数据库
+tea-ai-service/data/knowledge.txt
+tea-ai-service/data/tea_with_vectors.json
+
+# 如果你还有其他爬虫产生的临时 JSON
+tea-ai-service/data/*.json

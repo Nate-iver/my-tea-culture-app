@@ -155,6 +155,12 @@
 			"style": {
 				"navigationBarTitleText": "意见反馈"
 			}
+		},
+		{
+			"path": "pages/ai-chat/index",
+			"style": {
+				"navigationBarTitleText": "AI 茶文化问答"
+			}
 		}
 	],
 	"globalStyle": {
