@@ -15,6 +15,7 @@ const feedbackRoutes = require('./routes/feedback');
 const commentRoutes = require('./routes/comment');
 const orderRoutes = require('./routes/order');
 const { searchTea } = require('./services/searchService');
+const { generateAnswer } = require('./services/llmService');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -45,6 +46,27 @@ app.get('/api/search/tea', async (req, res) => {
   } catch (error) {
     res.status(500).json({
       error: error.message || '茶叶搜索失败'
+    });
+  }
+});
+
+app.post('/api/ai/ask', async (req, res) => {
+  try {
+    const { question } = req.body;
+    const sources = await searchTea(question);
+    const context = sources
+      .map((item) => `${item.name}: ${item.content}`)
+      .join('\n');
+
+    const answer = await generateAnswer(question, context);
+
+    res.json({
+      answer,
+      sources
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: error.message || 'AI 问答失败'
     });
   }
 });
