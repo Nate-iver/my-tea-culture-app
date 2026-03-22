@@ -4,8 +4,9 @@ import os
 
 # --- 配置区 ---
 EMBED_API_URL = "http://localhost:8000/embed"
-INPUT_PATH = "data/knowledge.txt"
-OUTPUT_PATH = "data/tea_with_vectors.json"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+INPUT_PATH = os.path.join(BASE_DIR, "data", "knowledge.txt")
+OUTPUT_PATH = os.path.join(BASE_DIR, "data", "tea_with_vectors.json")
 # 既然你的 main.py 支持 List[str]，我们一次发 16 条，效率更高
 BATCH_SIZE = 4 
 
