@@ -6,6 +6,7 @@ const VECTOR_DB_PATH = path.join(
   __dirname,
   '../../tea-ai-service/data/tea_with_vectors.json'
 );
+const LOW_CONFIDENCE_THRESHOLD = 0.45;
 
 function cosineSimilarity(vecA, vecB) {
   if (!Array.isArray(vecA) || !Array.isArray(vecB) || vecA.length === 0 || vecB.length === 0) {
@@ -51,21 +52,36 @@ async function searchTea(query) {
     throw new Error('向量库数据格式错误，期望为数组');
   }
 
-  return vectorDB
+  const results = vectorDB
     .map((item) => {
       const itemVector = Array.isArray(item.vector) ? item.vector : [];
       const score = cosineSimilarity(queryVector, itemVector);
+      const fallbackName = item.name || item.title || item.topic || `片段-${item.id ?? 'unknown'}`;
       return {
-        name: item.name,
-        content: item.content,
+        name: fallbackName,
+        content: item.content || '',
         score
       };
     })
     .sort((a, b) => b.score - a.score)
     .slice(0, 3);
+
+  return results;
+}
+
+async function searchTeaWithMeta(query) {
+  const results = await searchTea(query);
+  const topScore = results.length > 0 ? results[0].score : 0;
+
+  return {
+    results,
+    topScore,
+    lowConfidence: topScore < LOW_CONFIDENCE_THRESHOLD
+  };
 }
 
 module.exports = {
   cosineSimilarity,
-  searchTea
+  searchTea,
+  searchTeaWithMeta
 };

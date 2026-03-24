@@ -14,7 +14,7 @@ const certEnrollRoutes = require('./routes/certEnroll');
 const feedbackRoutes = require('./routes/feedback');
 const commentRoutes = require('./routes/comment');
 const orderRoutes = require('./routes/order');
-const { searchTea } = require('./services/searchService');
+const { searchTea, searchTeaWithMeta } = require('./services/searchService');
 const { generateAnswer } = require('./services/llmService');
 
 const app = express();
@@ -40,7 +40,13 @@ app.use('/api', commentRoutes);
 
 app.get('/api/search/tea', async (req, res) => {
   try {
-    const keyword = req.query.keyword;
+    const keyword = (req.query.keyword || '').trim();
+    if (!keyword) {
+      return res.status(400).json({
+        error: 'keyword 不能为空'
+      });
+    }
+
     const results = await searchTea(keyword);
     res.json(results);
   } catch (error) {
@@ -52,17 +58,35 @@ app.get('/api/search/tea', async (req, res) => {
 
 app.post('/api/ai/ask', async (req, res) => {
   try {
-    const { question } = req.body;
-    const sources = await searchTea(question);
+    const question = (req.body?.question || '').trim();
+    if (!question) {
+      return res.status(400).json({
+        error: 'question 不能为空'
+      });
+    }
+
+    const searchStart = Date.now();
+    const searchResult = await searchTeaWithMeta(question);
+    const searchDuration = Date.now() - searchStart;
+
+    const sources = searchResult.results;
     const context = sources
       .map((item) => `${item.name}: ${item.content}`)
       .join('\n');
 
+    const llmStart = Date.now();
     const answer = await generateAnswer(question, context);
+    const llmDuration = Date.now() - llmStart;
+
+    console.log(
+      `[RAG] query="${question.slice(0, 30)}" searchMs=${searchDuration} llmMs=${llmDuration} hits=${sources.length} topScore=${searchResult.topScore.toFixed(4)}`
+    );
 
     res.json({
       answer,
-      sources
+      sources,
+      lowConfidence: searchResult.lowConfidence,
+      topScore: searchResult.topScore
     });
   } catch (error) {
     res.status(500).json({
