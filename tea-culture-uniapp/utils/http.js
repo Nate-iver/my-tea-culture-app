@@ -1,5 +1,10 @@
 // api/request.js
-const baseUrl = '/api'; // 使用 Vite 代理
+// H5 走 Vite 代理；App 端需直连后端绝对地址。
+let baseUrl = '/api';
+
+// #ifdef APP-PLUS
+baseUrl = 'http://192.168.1.6:3000/api';
+// #endif
 
 export const request = (options) => {
 	// 从本地缓存读取 token
