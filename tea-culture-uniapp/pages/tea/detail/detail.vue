@@ -58,7 +58,9 @@
 </template>
 
 <script setup>
-import { ref, onLoad } from '@dcloudio/uni-app';
+// ✅ 正确写法：分家导入
+import { ref, computed } from 'vue'; 
+import { onLoad, onReady } from '@dcloudio/uni-app';
 import { request } from '@/utils/http.js';
 
 const loading = ref(true);
