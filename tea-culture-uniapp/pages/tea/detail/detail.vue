@@ -85,7 +85,7 @@ const loadDetail = async () => {
     detail.value = {
       name: '西湖龙井',
       title: '西湖龙井冲泡指南',
-      image: 'https://via.placeholder.com/300x200.png?text=Tea',
+      image: '/static/placeholders/tea.png',
       category: '绿茶',
       type: '冲泡教程',
       create_time: '2026-02-20',
@@ -101,8 +101,8 @@ const loadDetail = async () => {
     };
     
     recommendations.value = [
-      { id: 2, title: '碧螺春品鉴', image: 'https://via.placeholder.com/100x100.png?text=Tea' },
-      { id: 3, title: '黄山毛峰', image: 'https://via.placeholder.com/100x100.png?text=Tea' }
+      { id: 2, title: '碧螺春品鉴', image: '/static/placeholders/cover-square.png' },
+      { id: 3, title: '黄山毛峰', image: '/static/placeholders/cover-square.png' }
     ];
   } catch (e) {
     console.error('加载详情失败:', e);

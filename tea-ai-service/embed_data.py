@@ -1,14 +1,16 @@
 import requests
 import json
 import os
+import time
 
 # --- 配置区 ---
-EMBED_API_URL = "http://localhost:8000/embed"
+EMBED_API_URL = "http://127.0.0.1:8000/embed"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 INPUT_PATH = os.path.join(BASE_DIR, "data", "knowledge.txt")
 OUTPUT_PATH = os.path.join(BASE_DIR, "data", "tea_with_vectors.json")
 # 既然你的 main.py 支持 List[str]，我们一次发 16 条，效率更高
 BATCH_SIZE = 4 
+MAX_RETRIES = 3
 
 def split_text_with_overlap(text, chunk_size=450, overlap=50):
     chunks = []
@@ -32,6 +34,9 @@ def process_knowledge():
     print(f"✅ 文档已切分为 {total_chunks} 个片段。")
 
     vector_database = []
+    session = requests.Session()
+    # 忽略系统代理，确保请求直连本机向量服务
+    session.trust_env = False
 
     # --- 批量向量化处理 ---
     print(f"🚀 开始批量向量化 (每组 {BATCH_SIZE} 片)...")
@@ -42,9 +47,16 @@ def process_knowledge():
         try:
             # 【关键修改 1】：发送格式对齐 main.py 的 TextBatch 类
             payload = {"texts": batch_texts}
-            response = requests.post(EMBED_API_URL, json=payload, timeout=20)
-            
-            if response.status_code == 200:
+            response = None
+
+            for attempt in range(1, MAX_RETRIES + 1):
+                response = session.post(EMBED_API_URL, json=payload, timeout=20)
+                if response.status_code == 200:
+                    break
+                if attempt < MAX_RETRIES:
+                    time.sleep(0.8)
+
+            if response is not None and response.status_code == 200:
                 # 【关键修改 2】：获取键名对齐 main.py 返回的 "embeddings"
                 batch_vectors = response.json()["embeddings"]
                 
@@ -59,7 +71,12 @@ def process_knowledge():
                 print(f"进度: [{min(i + BATCH_SIZE, total_chunks)}/{total_chunks}] 向量化完成...")
             else:
                 # 打印具体的报错 JSON，看看是 FastAPI 报的还是模型报的
-                print(f"⚠️ 处理失败 (索引 {i}): 状态码 {response.status_code}, 内容: {response.text}")
+                status_code = response.status_code if response is not None else "N/A"
+                body = response.text if response is not None else ""
+                print(f"⚠️ 处理失败 (索引 {i}): 状态码 {status_code}, 内容: {body}")
+                if i == 0:
+                    print("❌ 首批请求失败，已中止。请先确认 main.py 正在运行。")
+                    break
                 
         except Exception as e:
             print(f"❌ 连接失败，请确保 main.py 已启动！错误: {e}")

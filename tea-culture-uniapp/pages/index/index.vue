@@ -54,7 +54,7 @@
           @click="goDetail(item.id)"
         >
           <u-image
-            :src="item.cover_image || 'https://via.placeholder.com/120x120.png?text=Tea'"
+            :src="item.cover_image || '/static/placeholders/cover-square.png'"
             width="120rpx"
             height="120rpx"
             radius="12rpx"
@@ -118,9 +118,9 @@ const contentLoading = ref(true);
 const eventLoading = ref(true);
 
 const swiperList = ref([
-  { image: 'https://via.placeholder.com/750x320.png?text=Banner1' },
-  { image: 'https://via.placeholder.com/750x320.png?text=Banner2' },
-  { image: 'https://via.placeholder.com/750x320.png?text=Banner3' }
+  { image: '/static/placeholders/banner.png' },
+  { image: '/static/placeholders/banner.png' },
+  { image: '/static/placeholders/banner.png' }
 ]);
 
 const quickNavs = ref([

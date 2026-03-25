@@ -19,7 +19,7 @@
       >
         <image 
           class="cover" 
-          :src="item.cover_image || 'https://via.placeholder.com/200x140.png?text=Tea+Culture'" 
+          :src="item.cover_image || '/static/placeholders/cover-rect.png'" 
           mode="aspectFill"
         ></image>
         <view class="info">

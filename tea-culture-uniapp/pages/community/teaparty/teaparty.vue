@@ -18,7 +18,7 @@
         @click="goDetail(party.id)"
       >
         <u-image 
-          :src="party.image || 'https://via.placeholder.com/300x200.png?text=TeaParty'" 
+          :src="party.image || '/static/placeholders/party.png'" 
           width="100%" 
           height="200rpx"
           radius="12rpx"

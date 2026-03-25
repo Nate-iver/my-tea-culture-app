@@ -16,7 +16,7 @@
     <!-- 茶叶购买 -->
     <view v-if="currentTab === 0" class="tea-shop">
       <view class="banner">
-        <u-image src="https://via.placeholder.com/750x300.png?text=TeaShop" width="100%" height="300rpx"></u-image>
+        <u-image src="/static/placeholders/banner.png" width="100%" height="300rpx"></u-image>
       </view>
       
       <u-loading-icon v-if="teaLoading" mode="circle" text="加载中..."></u-loading-icon>
@@ -28,7 +28,7 @@
           class="product-card"
         >
           <u-image 
-            :src="product.image || 'https://via.placeholder.com/200x200.png?text=Tea'" 
+            :src="product.image || '/static/placeholders/tea.png'" 
             width="100%" 
             height="200rpx"
             radius="8rpx"
@@ -76,7 +76,7 @@
           class="product-card"
         >
           <u-image 
-            :src="product.image || 'https://via.placeholder.com/200x200.png?text=Teaware'" 
+            :src="product.image || '/static/placeholders/teaware.png'" 
             width="100%" 
             height="200rpx"
             radius="8rpx"
