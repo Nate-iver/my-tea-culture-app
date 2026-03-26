@@ -77,14 +77,14 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted } from 'vue';
 import { request } from '@/utils/http.js';
-import { checkPermission } from '@/utils/auth.js';
+import { checkPermission, backToAdminHome } from '@/utils/auth.js';
 
 const loading = ref(false);
 const orders = ref([]);
 const selectedStatus = ref('全部');
-const statusFilters = ref(['全部', '待支付', '已支付', '已发货', '已收货']);
+const statusFilters = ref(['全部', '待支付', '已支付', '已发货', '已收货', '已取消']);
 const allOrders = ref([]);
 
 onMounted(() => {
@@ -128,7 +128,8 @@ const statusMap = {
   '待支付': 'pending',
   '已支付': 'paid',
   '已发货': 'shipped',
-  '已收货': 'delivered'
+  '已收货': 'delivered',
+  '已取消': 'cancelled'
 };
 
 const loadOrders = async () => {
@@ -146,7 +147,7 @@ const loadOrders = async () => {
     const res = await request({
       url: '/orders',
       method: 'GET',
-      data: { page: 1, limit: 100 }
+      data: { page: 1, pageSize: 100 }
     });
     
     console.log('[orders-admin] API 响应:', res);
@@ -154,7 +155,7 @@ const loadOrders = async () => {
     console.log('[orders-admin] 是否数组:', Array.isArray(res));
     console.log('[orders-admin] res.data:', res.data);
 
-    const list = Array.isArray(res) ? res : (res.data || []);
+    const list = Array.isArray(res) ? res : (res.data || res.list || []);
     allOrders.value = list;
     filterOrders();
     
@@ -219,8 +220,7 @@ const deliverOrder = async (orderId) => {
 };
 
 const goBack = () => {
-  // 返回到管理员首页
-  uni.navigateBack({ delta: 1 });
+  backToAdminHome();
 };
 </script>
 

@@ -1,0 +1,31 @@
+<svg width="1200" height="540" viewBox="0 0 1200 540" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#6B4D36"/>
+      <stop offset="100%" stop-color="#B07A4A"/>
+    </linearGradient>
+    <linearGradient id="steam2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFF6E6" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#FFF6E6" stop-opacity="0.1"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="540" fill="url(#bg2)"/>
+  <rect x="0" y="390" width="1200" height="150" fill="#2A1E16" fill-opacity="0.28"/>
+  <circle cx="160" cy="80" r="140" fill="#FFFFFF" fill-opacity="0.08"/>
+  <circle cx="1140" cy="480" r="180" fill="#FFFFFF" fill-opacity="0.08"/>
+  <g transform="translate(720,95)">
+    <ellipse cx="140" cy="320" rx="230" ry="68" fill="#1E140F" fill-opacity="0.36"/>
+    <path d="M10 260 C10 190 70 150 140 150 C210 150 270 190 270 260 L270 300 L10 300 Z" fill="#F4E5CE"/>
+    <rect x="38" y="298" width="204" height="30" rx="15" fill="#E7D3B2"/>
+    <path d="M270 215 C325 215 330 302 275 305" fill="none" stroke="#F4E5CE" stroke-width="18" stroke-linecap="round"/>
+    <path d="M80 150 C95 105 78 70 98 35" stroke="url(#steam2)" stroke-width="10" fill="none" stroke-linecap="round"/>
+    <path d="M140 145 C160 95 146 58 168 20" stroke="url(#steam2)" stroke-width="10" fill="none" stroke-linecap="round"/>
+    <path d="M200 150 C220 105 202 70 224 35" stroke="url(#steam2)" stroke-width="10" fill="none" stroke-linecap="round"/>
+  </g>
+  <g transform="translate(120,95)">
+    <rect x="0" y="0" width="460" height="230" rx="22" fill="#000000" fill-opacity="0.15"/>
+    <text x="28" y="86" fill="#FFF9EE" font-size="56" font-family="Arial, sans-serif" font-weight="700">Tea Gathering</text>
+    <text x="28" y="144" fill="#FCECD3" font-size="30" font-family="Arial, sans-serif">Offline tea parties and city events</text>
+    <text x="28" y="192" fill="#F7DEC0" font-size="26" font-family="Arial, sans-serif">Brew together, share stories, meet new friends</text>
+  </g>
+</svg>

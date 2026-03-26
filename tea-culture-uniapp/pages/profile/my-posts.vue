@@ -44,10 +44,7 @@
 
         <view class="post-footer">
           <view class="post-stats">
-            <u-icon name="thumb-up" color="#909399" size="16"></u-icon>
-            <u-text :text="post.likes || 0" size="12" color="#909399" margin="0 0 0 5rpx"></u-text>
-            
-            <u-icon name="chat" color="#909399" size="16" margin="0 0 0 15rpx"></u-icon>
+            <u-icon name="chat" color="#909399" size="16"></u-icon>
             <u-text :text="post.comments || 0" size="12" color="#909399" margin="0 0 0 5rpx"></u-text>
           </view>
           <u-text :text="formatDate(post.created_at)" size="12" color="#bdbdbd"></u-text>

@@ -91,15 +91,8 @@ const enrollController = {
         return res.status(403).json({ message: '无权限取消该报名' });
       }
 
-      if (enroll.status === 2) {
-        return res.status(400).json({ message: '报名已经取消' });
-      }
-
-      // 更新报名状态为已取消
-      await db.execute(
-        'UPDATE event_enroll SET status = 2 WHERE id = ?',
-        [enrollId]
-      );
+      // 物理删除报名记录
+      await db.execute('DELETE FROM event_enroll WHERE id = ?', [enrollId]);
 
       // 减少茶会当前报名人数
       await db.execute(

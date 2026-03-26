@@ -61,6 +61,8 @@
 </template>
 
 <script>
+import { request } from '@/utils/http';
+
 export default {
   data() {
     return {
@@ -130,17 +132,18 @@ export default {
       this.scrollToBottom();
 
       this.sending = true;
-      uni.request({
-        url: 'http://localhost:3000/api/ai/ask',
+      request({
+        url: '/ai/ask',
         method: 'POST',
         data: {
           question
-        },
-        success: (res) => {
-          const answer = res && res.data && res.data.answer;
-          const sources = this.normalizeSources((res && res.data && res.data.sources) || []);
-          const lowConfidence = Boolean(res && res.data && res.data.lowConfidence);
-          const topScore = Number(res && res.data && res.data.topScore) || 0;
+        }
+      })
+        .then((res) => {
+          const answer = res && res.answer;
+          const sources = this.normalizeSources((res && res.sources) || []);
+          const lowConfidence = Boolean(res && res.lowConfidence);
+          const topScore = Number(res && res.topScore) || 0;
           this.messages.push({
             role: 'ai',
             content: answer || '收到请求，但暂未获取到有效回复。',
@@ -148,18 +151,18 @@ export default {
             lowConfidence,
             topScore
           });
-        },
-        fail: () => {
+        })
+        .catch((err) => {
+          const detail = (err && (err.error || err.message)) || '请求失败，请检查网络连接或后端服务状态。';
           this.messages.push({
             role: 'ai',
-            content: '请求失败，请检查网络连接或后端服务状态。'
+            content: detail
           });
-        },
-        complete: () => {
+        })
+        .finally(() => {
           this.sending = false;
           this.scrollToBottom();
-        }
-      });
+        });
     }
   }
 };

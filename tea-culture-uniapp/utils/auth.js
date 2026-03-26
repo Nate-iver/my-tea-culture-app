@@ -69,3 +69,21 @@ export const getHomePageRoute = () => {
   }
   return '/pages/index/index';
 };
+
+/**
+ * 管理员页面返回：
+ * 1. 上一页仍是管理员页面时，正常返回
+ * 2. 否则直接跳转管理员首页，避免回到普通用户页面
+ */
+export const backToAdminHome = () => {
+  const pages = getCurrentPages();
+  const prevPage = pages.length > 1 ? pages[pages.length - 2] : null;
+  const prevRoute = prevPage?.route || '';
+
+  if (prevRoute.startsWith('pages/admin/')) {
+    uni.navigateBack({ delta: 1 });
+    return;
+  }
+
+  uni.redirectTo({ url: '/pages/admin/index' });
+};

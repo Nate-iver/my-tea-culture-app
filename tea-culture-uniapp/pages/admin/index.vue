@@ -208,12 +208,12 @@ const loadDashboard = async () => {
   try {
     // 加载统计数据
     const [ordersRes, productsRes, certificatesRes, eventsRes, usersRes, feedbackRes] = await Promise.all([
-      request({ url: '/orders', method: 'GET', data: { page: 1, limit: 5 } }),
-      request({ url: '/products', method: 'GET', data: { page: 1, limit: 1 } }),
-      request({ url: '/certificates', method: 'GET', data: { page: 1, limit: 1 } }),
-      request({ url: '/events', method: 'GET', data: { page: 1, limit: 1 } }),
-      request({ url: '/users', method: 'GET', data: { page: 1, limit: 1 } }),
-      request({ url: '/feedback', method: 'GET', data: { page: 1, limit: 1 } })
+      request({ url: '/orders', method: 'GET', data: { page: 1, pageSize: 5 } }),
+      request({ url: '/products', method: 'GET', data: { page: 1, pageSize: 1 } }),
+      request({ url: '/certificates', method: 'GET', data: { page: 1, pageSize: 1 } }),
+      request({ url: '/events', method: 'GET', data: { page: 1, pageSize: 1 } }),
+      request({ url: '/users', method: 'GET', data: { page: 1, pageSize: 1 } }),
+      request({ url: '/feedback', method: 'GET', data: { page: 1, pageSize: 1 } })
     ]);
 
     console.log('[admin-dashboard] 订单响应:', ordersRes);

@@ -51,11 +51,18 @@
               margin="0 0 0 10rpx"
             ></u-tag>
             <u-button
-              v-if="party.status === 'recruiting'"
+              v-if="party.enrolled"
               size="mini"
-              :type="party.enrolled ? 'info' : 'primary'"
-              :text="party.enrolled ? '已报名' : '报名'"
-              :disabled="party.enrolled"
+              type="error"
+              text="取消报名"
+              @click.stop="cancelEnroll(party)"
+              customStyle="margin-left: 10rpx; height: 46rpx;"
+            ></u-button>
+            <u-button
+              v-else-if="party.status === 'recruiting'"
+              size="mini"
+              type="primary"
+              text="报名"
               @click.stop="openEnroll(party)"
               customStyle="margin-left: 10rpx; height: 46rpx;"
             ></u-button>
@@ -111,6 +118,7 @@ const showEnroll = ref(false);
 const enrollPhone = ref('');
 const selectedEvent = ref(null);
 const enrolledEventIds = ref(new Set());
+const enrollIdByEventId = ref(new Map());
 
 const cityOptions = ref([
   { label: '全部城市', value: '' },
@@ -159,7 +167,14 @@ const loadMyEnrollments = async () => {
         ? res.data
         : (res.data?.data || res.list || []));
 
-    enrolledEventIds.value = new Set(list.map(item => item.event_id));
+    const activeList = list.filter(item => item.status !== 2);
+    enrolledEventIds.value = new Set(activeList.map(item => item.event_id));
+
+    const idMap = new Map();
+    activeList.forEach(item => {
+      idMap.set(item.event_id, item.id);
+    });
+    enrollIdByEventId.value = idMap;
   } catch (e) {
     console.error('加载报名记录失败:', e);
   }
@@ -180,7 +195,7 @@ const loadPartyList = async () => {
     const pageSize = 20;
     const params = {
       page: 1,
-      limit: pageSize
+      pageSize
     };
     if (selectedCity.value) params.location = cityLabel;
     if (selectedStatus.value) params.status = statusValue;
@@ -224,7 +239,8 @@ const loadPartyList = async () => {
         status: statusText,
         fee: item.fee || 0,
         image: item.image || '',
-        enrolled: isEnrolled
+        enrolled: isEnrolled,
+        enrollId: enrollIdByEventId.value.get(item.id) || null
       };
     });
 
@@ -246,9 +262,9 @@ const loadPartyList = async () => {
   }
 };
 
-onMounted(() => {
-  loadMyEnrollments();
-  loadPartyList();
+onMounted(async () => {
+  await loadMyEnrollments();
+  await loadPartyList();
 });
 
 const goDetail = (id) => {
@@ -302,8 +318,37 @@ const submitEnroll = async () => {
     loadPartyList();
   } catch (e) {
     console.error('报名失败:', e);
-    uni.showToast({ title: '报名失败', icon: 'none' });
+    uni.showToast({ title: e.message || '报名失败', icon: 'none' });
   }
+};
+
+const cancelEnroll = (party) => {
+  if (!party.enrollId) {
+    uni.showToast({ title: '未找到报名记录', icon: 'none' });
+    return;
+  }
+
+  uni.showModal({
+    title: '取消报名',
+    content: '确定要取消该茶会报名吗？',
+    success: async (res) => {
+      if (!res.confirm) return;
+
+      try {
+        await request({
+          url: `/enroll/${party.enrollId}`,
+          method: 'DELETE'
+        });
+
+        uni.showToast({ title: '已取消报名', icon: 'success' });
+        await loadMyEnrollments();
+        loadPartyList();
+      } catch (e) {
+        console.error('取消报名失败:', e);
+        uni.showToast({ title: e.message || '取消失败', icon: 'none' });
+      }
+    }
+  });
 };
 </script>
 

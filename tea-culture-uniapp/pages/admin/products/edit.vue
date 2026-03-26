@@ -89,7 +89,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { request } from '@/utils/http.js';
-import { checkPermission } from '@/utils/auth.js';
+import { checkPermission, backToAdminHome } from '@/utils/auth.js';
 
 const formRef = ref(null);
 const saving = ref(false);
@@ -181,7 +181,7 @@ const saveProduct = async () => {
     }
 
     setTimeout(() => {
-      uni.navigateBack();
+      backToAdminHome();
     }, 500);
   } catch (e) {
     console.error('[product-edit] 保存失败:', e);
@@ -192,7 +192,7 @@ const saveProduct = async () => {
 };
 
 const goBack = () => {
-  uni.navigateBack();
+  backToAdminHome();
 };
 </script>
 

@@ -8,6 +8,35 @@ const VECTOR_DB_PATH = path.join(
 );
 const LOW_CONFIDENCE_THRESHOLD = 0.45;
 
+function tokenize(text) {
+  if (typeof text !== 'string') {
+    return [];
+  }
+
+  return text
+    .toLowerCase()
+    .replace(/[^\u4e00-\u9fa5a-z0-9\s]/gi, ' ')
+    .split(/\s+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function keywordSimilarity(query, text) {
+  const queryTokens = tokenize(query);
+  const textTokens = tokenize(text);
+
+  if (queryTokens.length === 0 || textTokens.length === 0) {
+    return 0;
+  }
+
+  const textTokenSet = new Set(textTokens);
+  const hitCount = queryTokens.reduce((acc, token) => {
+    return acc + (textTokenSet.has(token) ? 1 : 0);
+  }, 0);
+
+  return hitCount / queryTokens.length;
+}
+
 function cosineSimilarity(vecA, vecB) {
   if (!Array.isArray(vecA) || !Array.isArray(vecB) || vecA.length === 0 || vecB.length === 0) {
     return 0;
@@ -38,11 +67,18 @@ async function searchTea(query) {
     throw new Error('query 必须是非空字符串');
   }
 
-  const embeddings = await getEmbeddings([query]);
-  const queryVector = embeddings && embeddings[0];
+  let queryVector = [];
+  let useVectorSearch = true;
 
-  if (!Array.isArray(queryVector) || queryVector.length === 0) {
-    throw new Error('未获取到有效的查询向量');
+  try {
+    const embeddings = await getEmbeddings([query]);
+    queryVector = embeddings && embeddings[0];
+    if (!Array.isArray(queryVector) || queryVector.length === 0) {
+      useVectorSearch = false;
+    }
+  } catch (error) {
+    useVectorSearch = false;
+    console.warn('[searchService] 向量检索不可用，降级为关键词检索:', error.message);
   }
 
   const raw = fs.readFileSync(VECTOR_DB_PATH, 'utf-8');
@@ -55,7 +91,9 @@ async function searchTea(query) {
   const results = vectorDB
     .map((item) => {
       const itemVector = Array.isArray(item.vector) ? item.vector : [];
-      const score = cosineSimilarity(queryVector, itemVector);
+      const score = useVectorSearch
+        ? cosineSimilarity(queryVector, itemVector)
+        : keywordSimilarity(query, `${item.name || ''} ${item.content || ''}`);
       const fallbackName = item.name || item.title || item.topic || `片段-${item.id ?? 'unknown'}`;
       return {
         name: fallbackName,

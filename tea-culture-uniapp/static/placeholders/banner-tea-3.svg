@@ -1,0 +1,30 @@
+<svg width="1200" height="540" viewBox="0 0 1200 540" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg3" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#2A5D84"/>
+      <stop offset="100%" stop-color="#6AA7B8"/>
+    </linearGradient>
+    <linearGradient id="leaf3" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#C7F0C2"/>
+      <stop offset="100%" stop-color="#76C893"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="540" fill="url(#bg3)"/>
+  <path d="M0 420 C170 360 340 470 510 430 C680 390 850 330 1200 380 L1200 540 L0 540 Z" fill="#FFFFFF" fill-opacity="0.14"/>
+  <circle cx="1020" cy="100" r="150" fill="#FFFFFF" fill-opacity="0.10"/>
+  <g transform="translate(770,95)">
+    <ellipse cx="120" cy="325" rx="210" ry="60" fill="#173247" fill-opacity="0.35"/>
+    <path d="M-10 268 C-10 188 60 145 130 145 C200 145 270 188 270 268 L270 303 L-10 303 Z" fill="#EAF3F4"/>
+    <rect x="20" y="301" width="220" height="30" rx="15" fill="#D8E7E8"/>
+    <path d="M270 220 C325 220 332 302 278 304" fill="none" stroke="#EAF3F4" stroke-width="18" stroke-linecap="round"/>
+    <path d="M65 140 C80 92 62 54 84 20" stroke="#E4F7ED" stroke-width="10" fill="none" stroke-linecap="round"/>
+    <path d="M128 138 C147 84 132 45 154 8" stroke="#E4F7ED" stroke-width="10" fill="none" stroke-linecap="round"/>
+    <path d="M190 140 C208 94 190 58 214 24" stroke="#E4F7ED" stroke-width="10" fill="none" stroke-linecap="round"/>
+  </g>
+  <g transform="translate(100,110)">
+    <path d="M0 180 C130 60 250 60 390 180 C250 200 130 200 0 180 Z" fill="url(#leaf3)"/>
+    <path d="M60 150 C150 85 235 85 328 150" fill="none" stroke="#4D9F70" stroke-width="8" stroke-linecap="round"/>
+    <text x="0" y="290" fill="#F2FBFF" font-size="58" font-family="Arial, sans-serif" font-weight="700">Tea Learning</text>
+    <text x="0" y="342" fill="#DBF3F9" font-size="30" font-family="Arial, sans-serif">Courses, brewing tips and tea culture stories</text>
+  </g>
+</svg>

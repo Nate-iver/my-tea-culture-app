@@ -44,8 +44,8 @@
       <view v-for="item in filteredList" :key="item.id" class="feedback-item" @click="viewDetail(item)">
         <view class="item-header">
           <view class="user-info">
-            <u-avatar :text="item.username" size="35"></u-avatar>
-            <u-text :text="item.username" size="14" bold color="#303133" margin="0 0 0 15rpx"></u-text>
+            <u-avatar :text="getDisplayName(item)" size="35"></u-avatar>
+            <u-text :text="getDisplayName(item)" size="14" bold color="#303133" margin="0 0 0 15rpx"></u-text>
           </view>
           <u-tag 
             :text="item.status === 0 ? '待处理' : '已处理'" 
@@ -101,7 +101,7 @@
         <view v-if="currentItem" class="detail-content">
           <view class="detail-row">
             <u-text text="用户" size="13" color="#909399"></u-text>
-            <u-text :text="currentItem.username" size="14" bold color="#303133"></u-text>
+            <u-text :text="getDisplayName(currentItem)" size="14" bold color="#303133"></u-text>
           </view>
 
           <view class="detail-row">
@@ -150,6 +150,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { request } from '@/utils/http.js';
+import { checkPermission, backToAdminHome } from '@/utils/auth.js';
 
 const filterTabs = [
   { value: 'all', label: '全部' },
@@ -172,15 +173,25 @@ const stats = computed(() => {
 });
 
 onMounted(() => {
+  if (!checkPermission('admin')) {
+    return;
+  }
   loadFeedbackList();
 });
+
+const getDisplayName = (item) => {
+  if (item.username) return item.username;
+  if (item.user_id) return `用户#${item.user_id}`;
+  return '匿名用户';
+};
 
 const loadFeedbackList = async () => {
   try {
     loading.value = true;
     const res = await request({
       url: '/feedback',
-      method: 'GET'
+      method: 'GET',
+      data: { page: 1, pageSize: 100 }
     });
     
     console.log('[反馈列表] 原始响应:', res);
@@ -304,7 +315,7 @@ const formatTime = (timeStr) => {
 };
 
 const goBack = () => {
-  uni.navigateBack({ delta: 1 });
+  backToAdminHome();
 };
 </script>
 

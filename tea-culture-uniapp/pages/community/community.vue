@@ -22,7 +22,7 @@
                <text class="username">{{ item.username || '匿名茶友' }}</text>
                <text class="type-tag" v-if="item.type">{{ formatType(item.type) }}</text>
             </view>
-            <text class="time">{{ item.createdAt || '刚刚' }}</text>
+            <text class="time">{{ formatPostTime(item.create_time) }}</text>
           </view>
         </view>
         
@@ -32,8 +32,10 @@
         </view>
         
         <view class="post-footer">
-          <u-icon name="chat" label="评论" size="18"></u-icon>
-          <u-icon name="thumb-up" label="赞" size="18" margin-left="20"></u-icon>
+          <view class="post-stats">
+            <u-icon name="chat" color="#909399" size="18"></u-icon>
+            <u-text :text="item.comments || 0" size="14" color="#909399" margin="0 0 0 8rpx"></u-text>
+          </view>
         </view>
       </view>
       
@@ -66,6 +68,22 @@ const formatType = (type) => {
     'teaware': '茶具分享'
   };
   return map[type] || '其它';
+};
+
+const formatPostTime = (value) => {
+  if (!value) return '刚刚';
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  const hh = String(date.getHours()).padStart(2, '0');
+  const mm = String(date.getMinutes()).padStart(2, '0');
+  return `${y}-${m}-${d} ${hh}:${mm}`;
 };
 
 const getPosts = async (isRefresh = false) => {
@@ -228,6 +246,11 @@ const goDetail = (id) => {
       margin-top: 20rpx;
       border-top: 1rpx solid #f5f5f5;
       padding-top: 20rpx;
+      
+      .post-stats {
+        display: flex;
+        align-items: center;
+      }
     }
   }
 

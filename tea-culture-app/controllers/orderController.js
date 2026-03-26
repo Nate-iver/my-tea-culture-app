@@ -129,6 +129,64 @@ exports.cancelOrder = async (req, res) => {
     }
 };
 
+// 支付订单（仅待支付状态）
+exports.payOrder = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.user.id;
+
+        // 检查订单是否存在且属于当前用户
+        const checkSql = 'SELECT * FROM orders WHERE id = ? AND user_id = ?';
+        const [orders] = await db.query(checkSql, [id, userId]);
+
+        if (orders.length === 0) {
+            return res.status(404).json({ message: '订单不存在或无权访问' });
+        }
+
+        const order = orders[0];
+        if (order.status !== 'pending') {
+            return res.status(400).json({ message: '仅待支付订单可支付' });
+        }
+
+        const updateSql = 'UPDATE orders SET status = ? WHERE id = ?';
+        await db.query(updateSql, ['paid', id]);
+
+        res.json({ message: '支付成功', data: { id, status: 'paid' } });
+    } catch (err) {
+        console.error('支付订单失败:', err.message);
+        res.status(500).json({ message: '支付订单失败', error: err.message });
+    }
+};
+
+// 确认收货（仅已发货状态）
+exports.confirmOrder = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.user.id;
+
+        // 检查订单是否存在且属于当前用户
+        const checkSql = 'SELECT * FROM orders WHERE id = ? AND user_id = ?';
+        const [orders] = await db.query(checkSql, [id, userId]);
+
+        if (orders.length === 0) {
+            return res.status(404).json({ message: '订单不存在或无权访问' });
+        }
+
+        const order = orders[0];
+        if (order.status !== 'shipped') {
+            return res.status(400).json({ message: '仅已发货订单可确认收货' });
+        }
+
+        const updateSql = 'UPDATE orders SET status = ? WHERE id = ?';
+        await db.query(updateSql, ['delivered', id]);
+
+        res.json({ message: '确认收货成功', data: { id, status: 'delivered' } });
+    } catch (err) {
+        console.error('确认收货失败:', err.message);
+        res.status(500).json({ message: '确认收货失败', error: err.message });
+    }
+};
+
 // 管理员：获取所有订单
 exports.getAllOrders = async (req, res) => {
     try {

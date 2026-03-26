@@ -68,12 +68,21 @@
 
       <!-- 操作按钮 -->
       <view class="actions" v-if="order.status === 'pending'">
-        <u-button 
-          text="取消订单" 
-          type="error"
-          @click="cancelOrder"
-          plain
-        ></u-button>
+        <view class="actions-row">
+          <u-button 
+            text="取消订单" 
+            type="error"
+            @click="cancelOrder"
+            plain
+            customStyle="flex: 1;"
+          ></u-button>
+          <u-button 
+            text="立即支付" 
+            type="primary"
+            @click="payOrder"
+            customStyle="flex: 1;"
+          ></u-button>
+        </view>
       </view>
 
       <view class="actions" v-else-if="order.status === 'shipped'">
@@ -94,7 +103,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import { request } from '@/utils/http.js';
 
@@ -153,10 +162,14 @@ const loadOrder = async () => {
 
     console.log('[order-detail] response:', res);
 
-    order.value = res;
+    const detail = res && typeof res === 'object'
+      ? (res.data || res)
+      : null;
+
+    order.value = detail;
   } catch (e) {
     console.error('[order-detail] 加载失败:', e);
-    uni.showToast({ title: '加载订单失败', icon: 'none' });
+    uni.showToast({ title: e.message || '加载订单失败', icon: 'none' });
   } finally {
     loading.value = false;
   }
@@ -187,6 +200,31 @@ const cancelOrder = async () => {
   });
 };
 
+const payOrder = async () => {
+  uni.showModal({
+    title: '订单支付',
+    content: '确认支付该订单吗？',
+    success: async (res) => {
+      if (res.confirm) {
+        try {
+          await request({
+            url: `/orders/${orderId.value}/pay`,
+            method: 'POST'
+          });
+
+          uni.showToast({ title: '支付成功', icon: 'success' });
+          setTimeout(() => {
+            loadOrder();
+          }, 500);
+        } catch (e) {
+          console.error('支付失败:', e);
+          uni.showToast({ title: e.message || '支付失败，请重试', icon: 'none' });
+        }
+      }
+    }
+  });
+};
+
 const confirmOrder = async () => {
   uni.showModal({
     title: '确认收货',
@@ -195,11 +233,8 @@ const confirmOrder = async () => {
       if (res.confirm) {
         try {
           await request({
-            url: `/orders/${orderId.value}/status`,
-            method: 'PUT',
-            data: {
-              status: 'delivered'
-            }
+            url: `/orders/${orderId.value}/confirm`,
+            method: 'POST'
           });
 
           uni.showToast({ title: '已确认收货', icon: 'success' });
@@ -208,7 +243,7 @@ const confirmOrder = async () => {
           }, 1000);
         } catch (e) {
           console.error('确认失败:', e);
-          uni.showToast({ title: '操作失败，请重试', icon: 'none' });
+          uni.showToast({ title: e.message || '操作失败，请重试', icon: 'none' });
         }
       }
     }
@@ -267,6 +302,11 @@ onLoad((options) => {
 
   .actions {
     padding: 0 20rpx 30rpx 20rpx;
+
+    .actions-row {
+      display: flex;
+      gap: 16rpx;
+    }
   }
 
   .empty-state {

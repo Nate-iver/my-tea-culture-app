@@ -12,7 +12,7 @@
     <view class="search-bar">
       <u-search 
         v-model="searchKeyword"
-        placeholder="搜索用户名或邮箱"
+        placeholder="搜索用户名"
         @search="handleSearch"
         shape="round"
       ></u-search>
@@ -43,15 +43,8 @@
               size="mini"
             ></u-tag>
           </view>
-          <u-text :text="user.email" size="12" color="#909399" margin="5rpx 0 0 0"></u-text>
           <view class="user-meta" style="margin-top: 8rpx;">
-            <u-text :text="'注册: ' + formatDate(user.created_at)" size="11" color="#bdbdbd"></u-text>
-            <u-text 
-              :text="user.is_active ? '活跃' : '已禁用'" 
-              size="11" 
-              :color="user.is_active ? '#4caf50' : '#ff6b6b'"
-              margin="0 0 0 20rpx"
-            ></u-text>
+            <u-text :text="'注册: ' + formatDate(user.create_time)" size="11" color="#bdbdbd"></u-text>
           </view>
         </view>
 
@@ -64,10 +57,10 @@
             style="margin-right: 10rpx;"
           ></u-icon>
           <u-icon 
-            :name="user.is_active ? 'close-circle' : 'checkmark-circle'" 
+            name="trash" 
             size="20" 
-            :color="user.is_active ? '#ff6b6b' : '#4caf50'"
-            @click="toggleUserStatus(user)"
+            color="#ff6b6b"
+            @click="deleteUser(user)"
           ></u-icon>
         </view>
       </view>
@@ -75,7 +68,8 @@
 
     <!-- 编辑用户弹窗 -->
     <u-popup 
-      v-model="showModal"
+      :show="showModal"
+      @close="showModal = false"
       mode="center"
       :mask-click="false"
       border-radius="20"
@@ -92,23 +86,15 @@
             <u-input v-model="formData.username" placeholder="用户名" border="none" disabled></u-input>
           </u-form-item>
 
-          <u-form-item label="邮箱" prop="email">
-            <u-input v-model="formData.email" placeholder="邮箱" border="none" disabled></u-input>
-          </u-form-item>
-
           <u-form-item label="用户角色" prop="role">
-            <u-select 
-              v-model="formData.role"
-              :options="roleOptions"
-            ></u-select>
+            <u-radio-group v-model="formData.role" placement="row">
+              <u-radio name="user" label="普通用户"></u-radio>
+              <u-radio name="admin" label="管理员"></u-radio>
+            </u-radio-group>
           </u-form-item>
 
-          <u-form-item label="账户状态" prop="is_active">
-            <u-switch v-model="formData.is_active" active-color="#4caf50"></u-switch>
-          </u-form-item>
-
-          <u-form-item label="注册时间" prop="created_at">
-            <u-input v-model="formData.created_at" border="none" disabled></u-input>
+          <u-form-item label="注册时间" prop="create_time">
+            <u-input v-model="formData.create_time" border="none" disabled></u-input>
           </u-form-item>
         </u-form>
 
@@ -133,7 +119,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { request } from '@/utils/http.js';
-import { checkPermission } from '@/utils/auth.js';
+import { checkPermission, backToAdminHome } from '@/utils/auth.js';
 
 const loading = ref(false);
 const saving = ref(false);
@@ -143,17 +129,10 @@ const searchKeyword = ref('');
 const showModal = ref(false);
 const editingId = ref(null);
 
-const roleOptions = [
-  { label: '普通用户', value: 'user' },
-  { label: '管理员', value: 'admin' }
-];
-
 const formData = ref({
   username: '',
-  email: '',
   role: 'user',
-  is_active: true,
-  created_at: ''
+  create_time: ''
 });
 
 const formatDate = (value) => {
@@ -168,7 +147,7 @@ const loadUsers = async () => {
     const res = await request({
       url: '/users',
       method: 'GET',
-      data: { page: 1, limit: 100 }
+      data: { page: 1, pageSize: 100 }
     });
 
     console.log('[users-admin] API 响应:', res);
@@ -192,8 +171,7 @@ const handleSearch = () => {
 
   const keyword = searchKeyword.value.toLowerCase();
   users.value = allUsers.value.filter(user =>
-    user.username.toLowerCase().includes(keyword) ||
-    user.email.toLowerCase().includes(keyword)
+    (user.username || '').toLowerCase().includes(keyword)
   );
 };
 
@@ -201,10 +179,8 @@ const editUser = (user) => {
   editingId.value = user.id;
   formData.value = {
     username: user.username,
-    email: user.email,
     role: user.role || 'user',
-    is_active: user.is_active !== false,
-    created_at: formatDate(user.created_at)
+    create_time: formatDate(user.create_time)
   };
   showModal.value = true;
 };
@@ -213,8 +189,7 @@ const saveUser = async () => {
   try {
     saving.value = true;
     const data = {
-      role: formData.value.role,
-      is_active: formData.value.is_active
+      role: formData.value.role
     };
 
     await request({
@@ -234,20 +209,18 @@ const saveUser = async () => {
   }
 };
 
-const toggleUserStatus = (user) => {
-  const action = user.is_active ? '禁用' : '启用';
+const deleteUser = (user) => {
   uni.showModal({
     title: '确认操作',
-    content: `确定要${action}此用户吗？`,
+    content: `确定要删除用户 ${user.username} 吗？`,
     success: async (res) => {
       if (res.confirm) {
         try {
           await request({
             url: `/users/${user.id}`,
-            method: 'PUT',
-            data: { is_active: !user.is_active }
+            method: 'DELETE'
           });
-          uni.showToast({ title: `${action}成功`, icon: 'success' });
+          uni.showToast({ title: '删除成功', icon: 'success' });
           loadUsers();
         } catch (e) {
           console.error('操作失败:', e);
@@ -259,7 +232,7 @@ const toggleUserStatus = (user) => {
 };
 
 const goBack = () => {
-  uni.navigateBack({ delta: 1 });
+  backToAdminHome();
 };
 
 onMounted(() => {

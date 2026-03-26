@@ -52,7 +52,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { request } from '@/utils/http.js';
-import { checkPermission } from '@/utils/auth.js';
+import { checkPermission, backToAdminHome } from '@/utils/auth.js';
 
 const loading = ref(false);
 const products = ref([]);
@@ -72,7 +72,7 @@ const loadProducts = async () => {
     const res = await request({
       url: '/products',
       method: 'GET',
-      data: { page: 1, limit: 100 }
+      data: { page: 1, pageSize: 100 }
     });
 
     console.log('[products-admin] API 响应:', res);
@@ -128,7 +128,7 @@ const deleteProduct = (productId) => {
 
 const goBack = () => {
   console.log('[products-admin] 返回到管理员首页');
-  uni.navigateBack({ delta: 1 });
+  backToAdminHome();
 };
 </script>
 

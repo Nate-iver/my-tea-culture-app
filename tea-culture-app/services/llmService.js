@@ -3,6 +3,23 @@ const axios = require('axios');
 const LLM_API_URL = process.env.LLM_API_URL || 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions';
 const LLM_API_KEY = process.env.LLM_API_KEY || 'sk-xxxxxxxxxx';
 
+function buildFallbackAnswer(question, context) {
+  const contextLines = String(context || '')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .slice(0, 3);
+
+  const contextSummary = contextLines.length > 0 ? contextLines.join('；') : '暂无可用参考资料';
+
+  return [
+    '当前大模型服务暂时不可用，以下是基于本地知识库的参考结论：',
+    `你问的是：${question}`,
+    `参考资料：${contextSummary}`,
+    '建议稍后重试，以获取更完整的智能回答。'
+  ].join('\n');
+}
+
 /**
  * 调用大模型生成回答
  * @param {string} question - 用户问题
@@ -18,7 +35,7 @@ async function generateAnswer(question, context) {
 
   // 加上“请使用简体中文回答”的强制指令
 const prompt = `
-### 身份：你是一位只使用【简体中文】交流的资深茶文化专家，一旦我发现你用了繁体中文回答，我就会杀了你。
+### 身份：你是一位只使用【简体中文】交流的资深茶文化专家。
 
 ### 核心任务：
 结合以下参考资料回答用户问题。
@@ -69,12 +86,15 @@ ${question}
     return String(text).trim();
   } catch (error) {
     if (error.response) {
-      throw new Error(`LLM API 请求失败: ${error.response.status}`);
+      console.error('[llmService] LLM API 请求失败:', error.response.status);
+      return buildFallbackAnswer(question, safeContext);
     }
     if (error.request) {
-      throw new Error('LLM API 无响应，请检查服务地址或网络连接');
+      console.error('[llmService] LLM API 无响应');
+      return buildFallbackAnswer(question, safeContext);
     }
-    throw error;
+    console.error('[llmService] 生成回答异常:', error.message);
+    return buildFallbackAnswer(question, safeContext);
   }
 }
 

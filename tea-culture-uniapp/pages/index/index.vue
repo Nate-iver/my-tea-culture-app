@@ -101,10 +101,44 @@
               <u-text :text="party.time" size="12" color="#9aa1a7" margin="0 0 0 6rpx"></u-text>
             </view>
           </view>
-          <u-tag :text="party.status" size="mini" type="primary"></u-tag>
+          <view class="event-footer">
+            <u-button
+              v-if="party.enrolled"
+              size="mini"
+              type="error"
+              text="取消报名"
+              @click.stop="cancelEnroll(party)"
+            ></u-button>
+            <u-button
+              v-else-if="party.rawStatus === 1"
+              size="mini"
+              type="primary"
+              text="报名"
+              @click.stop="openEnroll(party)"
+            ></u-button>
+          </view>
         </view>
       </view>
     </view>
+
+    <u-popup :show="showEnroll" @close="closeEnroll" mode="center" round="12">
+      <view class="enroll-popup">
+        <u-text text="报名茶会" size="16" bold></u-text>
+        <view class="enroll-form">
+          <u-input
+            v-model="enrollPhone"
+            placeholder="请输入联系电话"
+            type="number"
+            clearable
+            border="bottom"
+          ></u-input>
+        </view>
+        <view class="enroll-actions">
+          <u-button text="取消" @click="closeEnroll"></u-button>
+          <u-button type="primary" text="确认报名" @click="submitEnroll"></u-button>
+        </view>
+      </view>
+    </u-popup>
   </view>
 </template>
 
@@ -116,11 +150,16 @@ const contentList = ref([]);
 const hotParties = ref([]);
 const contentLoading = ref(true);
 const eventLoading = ref(true);
+const showEnroll = ref(false);
+const enrollPhone = ref('');
+const selectedEvent = ref(null);
+const enrolledEventIds = ref(new Set());
+const enrollIdByEventId = ref(new Map());
 
 const swiperList = ref([
-  { image: '/static/placeholders/banner.png' },
-  { image: '/static/placeholders/banner.png' },
-  { image: '/static/placeholders/banner.png' }
+  { image: '/static/placeholders/banner-tea-1.svg' },
+  { image: '/static/placeholders/banner-tea-2.svg' },
+  { image: '/static/placeholders/banner-tea-3.svg' }
 ]);
 
 const quickNavs = ref([
@@ -129,7 +168,7 @@ const quickNavs = ref([
   { id: 3, name: 'AI问茶', icon: 'chat-fill', url: '/pages/ai-chat/index', color: '#66bb6a' },
   { id: 4, name: '茶叶购买', icon: 'shopping-cart', url: '/pages/service/service', color: '#ffc107' },
   { id: 5, name: '茶具商城', icon: 'gift', url: '/pages/service/service?tab=1', color: '#9c27b0' },
-  { id: 6, name: '茶艺认证', icon: 'medal', url: '/pages/service/service?tab=2', color: '#ff9800' }
+  { id: 6, name: '茶艺认证', icon: 'star-fill', url: '/pages/service/service?tab=2', color: '#ff9800' }
 ]);
 
 const formatType = (type) => {
@@ -148,6 +187,38 @@ const formatDate = (value) => {
   if (!value) return '';
   const date = value.split('T')[0] || value.split(' ')[0];
   return date;
+};
+
+const loadMyEnrollments = async () => {
+  const token = uni.getStorageSync('token');
+  if (!token) {
+    enrolledEventIds.value = new Set();
+    return;
+  }
+
+  try {
+    const res = await request({
+      url: '/enroll/my',
+      method: 'GET'
+    });
+
+    const list = Array.isArray(res)
+      ? res
+      : (Array.isArray(res.data)
+        ? res.data
+        : (res.data?.data || res.list || []));
+
+    const activeList = list.filter(item => item.status !== 2);
+    enrolledEventIds.value = new Set(activeList.map(item => item.event_id));
+
+    const idMap = new Map();
+    activeList.forEach(item => {
+      idMap.set(item.event_id, item.id);
+    });
+    enrollIdByEventId.value = idMap;
+  } catch (e) {
+    console.error('加载报名记录失败:', e);
+  }
 };
 
 const fetchContent = async () => {
@@ -203,7 +274,10 @@ const fetchHotEvents = async () => {
       title: item.title,
       city: item.location,
       time: formatDate(item.event_date),
-      status: item.status === 1 ? '报名中' : item.status === 2 ? '已满' : '已结束'
+      status: item.status === 1 ? '报名中' : item.status === 2 ? '已满' : '已结束',
+      rawStatus: item.status,
+      enrolled: enrolledEventIds.value.has(item.id),
+      enrollId: enrollIdByEventId.value.get(item.id) || null
     }));
   } catch (e) {
     console.error('首页茶会请求失败：', e);
@@ -212,9 +286,83 @@ const fetchHotEvents = async () => {
   }
 };
 
-onMounted(() => {
+const openEnroll = (party) => {
+  const token = uni.getStorageSync('token');
+  if (!token) {
+    uni.showToast({ title: '请先登录', icon: 'none' });
+    return uni.navigateTo({ url: '/pages/login/login' });
+  }
+
+  selectedEvent.value = party;
+  enrollPhone.value = '';
+  showEnroll.value = true;
+};
+
+const closeEnroll = () => {
+  showEnroll.value = false;
+};
+
+const submitEnroll = async () => {
+  if (!enrollPhone.value) {
+    return uni.showToast({ title: '请输入联系电话', icon: 'none' });
+  }
+  if (!selectedEvent.value) {
+    return uni.showToast({ title: '请选择茶会', icon: 'none' });
+  }
+
+  try {
+    await request({
+      url: '/enroll',
+      method: 'POST',
+      data: {
+        event_id: selectedEvent.value.id,
+        phone: enrollPhone.value
+      }
+    });
+
+    uni.showToast({ title: '报名成功', icon: 'success' });
+    showEnroll.value = false;
+    await loadMyEnrollments();
+    await fetchHotEvents();
+  } catch (e) {
+    console.error('报名失败:', e);
+    uni.showToast({ title: e.message || '报名失败', icon: 'none' });
+  }
+};
+
+const cancelEnroll = (party) => {
+  if (!party.enrollId) {
+    uni.showToast({ title: '未找到报名记录', icon: 'none' });
+    return;
+  }
+
+  uni.showModal({
+    title: '取消报名',
+    content: '确定要取消该茶会报名吗？',
+    success: async (res) => {
+      if (!res.confirm) return;
+
+      try {
+        await request({
+          url: `/enroll/${party.enrollId}`,
+          method: 'DELETE'
+        });
+
+        uni.showToast({ title: '已取消报名', icon: 'success' });
+        await loadMyEnrollments();
+        await fetchHotEvents();
+      } catch (e) {
+        console.error('取消报名失败:', e);
+        uni.showToast({ title: e.message || '取消失败', icon: 'none' });
+      }
+    }
+  });
+};
+
+onMounted(async () => {
   fetchContent();
-  fetchHotEvents();
+  await loadMyEnrollments();
+  await fetchHotEvents();
 });
 
 const goDetail = (id) => {
@@ -370,6 +518,29 @@ const goPage = (url) => {
   .meta-line {
     display: flex;
     align-items: center;
+  }
+
+  .event-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 4rpx;
+  }
+}
+
+.enroll-popup {
+  width: 560rpx;
+  padding: 30rpx;
+
+  .enroll-form {
+    margin-top: 20rpx;
+  }
+
+  .enroll-actions {
+    margin-top: 30rpx;
+    display: flex;
+    justify-content: space-between;
+    gap: 20rpx;
   }
 }
 </style>

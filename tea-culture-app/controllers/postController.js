@@ -15,24 +15,27 @@ const postController = {
       const params = [];
 
       if (user_id) {
-        where.push('user_id = ?');
+        where.push('p.user_id = ?');
         params.push(Number(user_id));
       }
       if (type) {
-        where.push('type = ?');
+        where.push('p.type = ?');
         params.push(type);
       }
       if (status !== undefined) {
-        where.push('status = ?');
+        where.push('p.status = ?');
         params.push(Number(status));
       }
 
       const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
 
       const [rows] = await db.execute(
-        `SELECT id, user_id, title, type, status, create_time
-         FROM \`post\` ${whereSql}
-         ORDER BY create_time DESC
+        `SELECT p.id, p.user_id, p.title, p.type, p.status, p.create_time, u.username,
+                (SELECT COUNT(*) FROM comment WHERE post_id = p.id) as comments
+         FROM \`post\` p
+         LEFT JOIN \`user\` u ON p.user_id = u.id
+         ${whereSql}
+         ORDER BY p.create_time DESC
          LIMIT ${limitNum} OFFSET ${offsetNum}`,
         params
       );
@@ -54,7 +57,11 @@ const postController = {
   getById: async (req, res) => {
     try {
       const [rows] = await db.execute(
-        'SELECT id, user_id, title, content, type, status, create_time FROM `post` WHERE id = ?',
+        `SELECT p.id, p.user_id, p.title, p.content, p.type, p.status, p.create_time, u.username,
+                (SELECT COUNT(*) FROM comment WHERE post_id = p.id) as comments
+         FROM \`post\` p
+         LEFT JOIN \`user\` u ON p.user_id = u.id
+         WHERE p.id = ?`,
         [req.params.id]
       );
       if (rows.length === 0) {

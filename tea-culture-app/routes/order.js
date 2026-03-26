@@ -15,6 +15,8 @@ router.get('/', authMiddleware, adminMiddleware, orderController.getAllOrders); 
 // 参数路由（放在最后）
 router.get('/:id', authMiddleware, orderController.getOrderById);         // 获取订单详情
 router.post('/:id/cancel', authMiddleware, orderController.cancelOrder);  // 取消订单
+router.post('/:id/pay', authMiddleware, orderController.payOrder);        // 支付订单
+router.post('/:id/confirm', authMiddleware, orderController.confirmOrder); // 用户确认收货
 router.put('/:id/status', authMiddleware, adminMiddleware, orderController.updateOrderStatus);  // 更新订单状态
 router.delete('/:id', authMiddleware, adminMiddleware, orderController.deleteOrder);      // 删除订单
 

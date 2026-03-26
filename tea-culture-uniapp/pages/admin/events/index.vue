@@ -31,12 +31,12 @@
       <view v-for="event in events" :key="event.id" class="event-item">
         <view class="event-header">
           <view class="event-info">
-            <u-text :text="event.name" size="15" bold color="#303133"></u-text>
-            <u-text :text="formatDate(event.event_date) + ' ' + event.event_time" size="12" color="#909399" margin="5rpx 0 0 0"></u-text>
+            <u-text :text="event.title" size="15" bold color="#303133"></u-text>
+            <u-text :text="formatDateTime(event.event_date)" size="12" color="#909399" margin="5rpx 0 0 0"></u-text>
           </view>
           <u-tag 
-            :text="event.enrolled_count + '/' + event.capacity" 
-            :type="event.enrolled_count >= event.capacity ? 'error' : 'success'"
+            :text="(event.current_participants || 0) + '/' + (event.max_participants || 0)" 
+            :type="(event.current_participants || 0) >= (event.max_participants || 0) ? 'error' : 'success'"
             size="mini"
           ></u-tag>
         </view>
@@ -45,7 +45,7 @@
           <u-text :text="event.description" size="13" color="#606266" :lines="2"></u-text>
           <view class="event-meta" style="margin-top: 10rpx;">
             <u-text :text="'地点: ' + event.location" size="12" color="#909399"></u-text>
-            <u-text :text="'¥' + event.price" size="12" color="#ff6b6b" bold margin="0 0 0 20rpx"></u-text>
+            <u-text :text="event.address || '地址未填写'" size="12" color="#909399" margin="0 0 0 20rpx"></u-text>
           </view>
         </view>
 
@@ -135,8 +135,8 @@
             <u-input v-model="formData.capacity" type="number" placeholder="容纳人数" border="none"></u-input>
           </u-form-item>
 
-          <u-form-item label="活动价格" prop="price">
-            <u-input v-model="formData.price" type="number" placeholder="活动价格" border="none"></u-input>
+          <u-form-item label="详细地址" prop="address">
+            <u-input v-model="formData.address" placeholder="输入详细地址(可选)" border="none"></u-input>
           </u-form-item>
         </u-form>
 
@@ -252,7 +252,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { request } from '@/utils/http.js';
-import { checkPermission } from '@/utils/auth.js';
+import { checkPermission, backToAdminHome } from '@/utils/auth.js';
 
 const loading = ref(false);
 const events = ref([]);
@@ -278,28 +278,33 @@ onMounted(() => {
 });
 
 const formData = ref({
-  name: '',
+  title: '',
   description: '',
   event_date: '',
   event_time: '',
   location: '',
   capacity: 20,
-  price: 99
+  address: ''
 });
 
 const rules = {
-  name: [{ required: true, message: '请输入活动名称' }],
+  title: [{ required: true, message: '请输入活动名称' }],
   description: [{ required: true, message: '请输入活动描述' }],
   event_date: [{ required: true, message: '请选择活动日期' }],
   event_time: [{ required: true, message: '请选择活动时间' }],
   location: [{ required: true, message: '请输入活动地点' }],
-  capacity: [{ required: true, message: '请输入容纳人数' }],
-  price: [{ required: true, message: '请输入活动价格' }]
+  capacity: [{ required: true, message: '请输入容纳人数' }]
 };
 
 const formatDate = (value) => {
   if (!value) return '';
   return value.split('T')[0] || value.split(' ')[0];
+};
+
+const formatDateTime = (value) => {
+  if (!value) return '';
+  const normalized = String(value).replace('T', ' ');
+  return normalized.slice(0, 16);
 };
 
 const loadEvents = async () => {
@@ -308,7 +313,7 @@ const loadEvents = async () => {
     const res = await request({
       url: '/events',
       method: 'GET',
-      data: { page: 1, limit: 100 }
+      data: { page: 1, pageSize: 100 }
     });
 
     console.log('[events-admin] API 响应:', res);
@@ -331,22 +336,26 @@ const showAddEvent = () => {
     event_time: '',
     location: '',
     capacity: 20,
-    price: 99
+    address: ''
   };
   showModal.value = true;
   console.log('[events-admin] 打开新增弹窗');
 };
 
 const editEvent = (event) => {
+  const dateObj = new Date(event.event_date || Date.now());
+  const datePart = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+  const timePart = `${String(dateObj.getHours()).padStart(2, '0')}:${String(dateObj.getMinutes()).padStart(2, '0')}`;
+
   editingId.value = event.id;
   formData.value = {
-    title: event.name || event.title,
+    title: event.title,
     description: event.description,
-    event_date: event.event_date,
-    event_time: event.event_time,
+    event_date: datePart,
+    event_time: timePart,
     location: event.location,
-    capacity: event.capacity,
-    price: event.price
+    capacity: event.max_participants || 30,
+    address: event.address || ''
   };
   showModal.value = true;
   console.log('[events-admin] 打开编辑弹窗, ID:', event.id);
@@ -381,19 +390,15 @@ const saveEvent = async () => {
       uni.showToast({ title: '请输入容纳人数', icon: 'none' });
       return;
     }
-    if (!formData.value.price && formData.value.price !== 0) {
-      uni.showToast({ title: '请输入活动价格', icon: 'none' });
-      return;
-    }
+    const dateTime = `${formData.value.event_date.trim()} ${formData.value.event_time.trim()}:00`;
 
     const data = {
       title: formData.value.title.trim(),
       description: formData.value.description.trim(),
-      event_date: formData.value.event_date.trim(),
-      event_time: formData.value.event_time.trim(),
+      event_date: dateTime,
       location: formData.value.location.trim(),
-      capacity: Number(formData.value.capacity),
-      price: Number(formData.value.price)
+      address: formData.value.address?.trim() || null,
+      max_participants: Number(formData.value.capacity)
     };
     
     console.log('[events-admin] 准备发送的数据:', JSON.stringify(data));
@@ -515,7 +520,7 @@ const deleteEvent = (eventId) => {
 };
 
 const goBack = () => {
-  uni.navigateBack({ delta: 1 });
+  backToAdminHome();
 };
 </script>
 

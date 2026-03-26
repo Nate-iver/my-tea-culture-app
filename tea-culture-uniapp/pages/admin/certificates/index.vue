@@ -40,8 +40,8 @@
         <view class="cert-content">
           <u-text :text="cert.description" size="13" color="#606266" :lines="2"></u-text>
           <view class="cert-meta" style="margin-top: 10rpx;">
-            <u-text :text="'课时: ' + cert.duration + 'h'" size="12" color="#909399"></u-text>
-            <u-text :text="'报名: ' + cert.enrolled_count + '人'" size="12" color="#909399" margin="0 0 0 20rpx"></u-text>
+            <u-text :text="'课时: ' + cert.duration + '天'" size="12" color="#909399"></u-text>
+            <u-text :text="'报名: ' + (cert.current_students || 0) + '/' + (cert.max_students || 0)" size="12" color="#909399" margin="0 0 0 20rpx"></u-text>
           </view>
         </view>
 
@@ -120,6 +120,10 @@
 
           <u-form-item label="价格" prop="price">
             <u-input v-model="formData.price" type="number" placeholder="课程价格" border="none"></u-input>
+          </u-form-item>
+
+          <u-form-item label="招生人数" prop="max_students">
+            <u-input v-model="formData.max_students" type="number" placeholder="最大学员数" border="none"></u-input>
           </u-form-item>
         </u-form>
 
@@ -225,7 +229,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import { request } from '@/utils/http.js';
-import { checkPermission } from '@/utils/auth.js';
+import { checkPermission, backToAdminHome } from '@/utils/auth.js';
 
 const loading = ref(false);
 const certificates = ref([]);
@@ -353,15 +357,17 @@ const formData = ref({
   start_date: '',
   description: '',
   duration: '10',
-  price: '99'
+  price: '99',
+  max_students: '20'
 });
 
 const rules = {
-  name: [{ required: true, message: '请输入课程名称' }],
+  title: [{ required: true, message: '请输入课程名称' }],
   level: [{ required: true, message: '请输入课程等级' }],
   description: [{ required: true, message: '请输入课程描述' }],
   duration: [{ required: true, message: '请输入课时' }],
-  price: [{ required: true, message: '请输入课程价格' }]
+  price: [{ required: true, message: '请输入课程价格' }],
+  max_students: [{ required: true, message: '请输入招生人数' }]
 };
 
 const loadCertificates = async () => {
@@ -370,7 +376,7 @@ const loadCertificates = async () => {
     const res = await request({
       url: '/certificates',
       method: 'GET',
-      data: { page: 1, limit: 100 }
+      data: { page: 1, pageSize: 100 }
     });
 
     certificates.value = Array.isArray(res) ? res : (res.data || []);
@@ -392,7 +398,8 @@ const showAddCertificate = () => {
     city: '',
     description: '',
     duration: '10',
-    price: '99'
+    price: '99',
+    max_students: '20'
   };
   showModal.value = true;
   console.log('[certificates-admin] 打开新增弹窗');
@@ -407,7 +414,8 @@ const editCertificate = (cert) => {
     city: cert.city || '',
     description: cert.description,
     duration: String(cert.duration || 10),
-    price: String(cert.price || 99)
+    price: String(cert.price || 99),
+    max_students: String(cert.max_students || 20)
   };
   showModal.value = true;
   console.log('[certificates-admin] 打开编辑弹窗, ID:', cert.id);
@@ -446,6 +454,10 @@ const saveCertificate = async () => {
       uni.showToast({ title: '请输入课程价格', icon: 'none' });
       return;
     }
+    if (!formData.value.max_students?.trim()) {
+      uni.showToast({ title: '请输入招生人数', icon: 'none' });
+      return;
+    }
 
     const data = {
       title: formData.value.title.trim(),
@@ -454,7 +466,8 @@ const saveCertificate = async () => {
       start_date: formData.value.start_date.trim(),
       description: formData.value.description.trim(),
       duration: Number(formData.value.duration),
-      price: Number(formData.value.price)
+      price: Number(formData.value.price),
+      max_students: Number(formData.value.max_students)
     };
     
     console.log('[certificates-admin] 准备发送的数据:', JSON.stringify(data));
@@ -585,7 +598,7 @@ const deleteCertificate = (certId) => {
 };
 
 const goBack = () => {
-  uni.navigateBack({ delta: 1 });
+  backToAdminHome();
 };
 </script>
 
