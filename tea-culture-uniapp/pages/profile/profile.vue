@@ -13,7 +13,6 @@
         <u-cell icon="shopping-cart" title="我的订单" isLink @click="goMyOrders"></u-cell>
         <u-cell icon="edit-pen" title="我的发布" isLink @click="goMyPosts"></u-cell>
         <u-cell icon="chat" title="意见反馈" isLink @click="goFeedback"></u-cell>
-        <u-cell icon="setting" title="设置" isLink></u-cell>
       </u-cell-group>
     </view>
 

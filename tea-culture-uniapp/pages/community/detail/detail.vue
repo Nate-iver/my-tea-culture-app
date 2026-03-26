@@ -16,9 +16,9 @@
       <view class="section-title">全部评论 ({{ commentList.length }})</view>
       
       <view v-for="(item, index) in commentList" :key="item.id" class="comment-item">
-        <u-avatar :text="'友'" size="24" bg-color="#eee"></u-avatar>
+        <u-avatar :text="(item.username && item.username.substring(0, 1)) || '友'" size="24" bg-color="#eee"></u-avatar>
         <view class="comment-right">
-          <view class="comment-user">匿名茶友</view>
+          <view class="comment-user">{{ item.username || '匿名茶友' }}</view>
           <view class="comment-text">{{ item.content }}</view>
           <view class="comment-time">{{ item.create_time }}</view>
         </view>
@@ -107,7 +107,13 @@ const submitComment = async () => {
     commentText.value = '';
     loadComments(); // 刷新列表
   } catch (e) {
-    uni.showToast({ title: e.data?.message || '发表失败', icon: 'none' });
+    if (e?.code === 'CONTENT_REJECTED') {
+      return uni.showToast({ title: e.reason || '评论内容不符合发布规范', icon: 'none', duration: 2800 });
+    }
+    if (e?.code === 'MODERATION_SERVICE_UNAVAILABLE') {
+      return uni.showToast({ title: '审核服务繁忙，请稍后重试', icon: 'none', duration: 2800 });
+    }
+    uni.showToast({ title: e?.message || '发表失败', icon: 'none' });
   } finally {
     submitting.value = false;
   }

@@ -33,7 +33,9 @@
 		{
 			"path": "pages/community/community",
 			"style": {
-				"navigationBarTitleText": "茶友社区"
+				"navigationBarTitleText": "茶友社区",
+				"enablePullDownRefresh": true,
+				"backgroundTextStyle": "dark"
 			}
 		},
 		{

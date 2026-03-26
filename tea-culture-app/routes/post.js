@@ -8,7 +8,7 @@ router.get('/', postController.list);  // 公开访问
 router.get('/:id', postController.getById);  // 公开访问
 router.post('/', authMiddleware, postController.create);  // 需要登录
 router.put('/:id', authMiddleware, adminMiddleware, postController.update);  // 需要管理员（审核）
-router.delete('/:id', authMiddleware, adminMiddleware, postController.remove);  // 需要管理员
+router.delete('/:id', authMiddleware, postController.remove);  // 需要登录（作者或管理员）
 
 // 评论（挂在帖子下）
 router.get('/:id/comments', postController.listComments);  // 公开访问

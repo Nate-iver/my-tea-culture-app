@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const { auditPost, auditComment, ModerationServiceUnavailableError } = require('../services/moderationService');
 
 const postController = {
   // 帖子列表（分页，可按 user_id/type/status 过滤）
@@ -77,20 +78,32 @@ const postController = {
   // 新增帖子（品茶笔记/交流）
   create: async (req, res) => {
     try {
-      const { user_id, title, content, type, status } = req.body || {};
+      const { user_id, title, content, type } = req.body || {};
       if (!user_id) {
-        return res.status(400).json({ message: 'user_id 不能为空' });
+        return res.status(400).json({ code: 'INVALID_INPUT', message: 'user_id 不能为空' });
       }
-      if (!content && !title) {
-        return res.status(400).json({ message: 'title 和 content 至少填写一个' });
+      const safeTitle = typeof title === 'string' ? title.trim() : '';
+      const safeContent = typeof content === 'string' ? content.trim() : '';
+      if (!safeTitle || !safeContent) {
+        return res.status(400).json({ code: 'INVALID_INPUT', message: '标题和正文不能为空' });
+      }
+
+      const moderation = await auditPost(safeTitle, safeContent);
+      if (!moderation.pass) {
+        return res.status(422).json({
+          code: 'CONTENT_REJECTED',
+          message: '帖子内容不符合发布规范',
+          reason: moderation.reason,
+          category: moderation.category
+        });
       }
 
       const finalType = type === 'tasting_note' ? 'tasting_note' : 'discussion';
-      const finalStatus = status !== undefined ? Number(status) : 0;
+      const finalStatus = 1;
 
       await db.execute(
         'INSERT INTO `post` (user_id, title, content, type, status) VALUES (?, ?, ?, ?, ?)',
-        [Number(user_id), title || null, content || null, finalType, finalStatus]
+        [Number(user_id), safeTitle, safeContent, finalType, finalStatus]
       );
 
       const [[row]] = await db.execute(
@@ -98,11 +111,17 @@ const postController = {
       );
       res.status(201).json(row);
     } catch (err) {
+      if (err instanceof ModerationServiceUnavailableError || err.code === 'MODERATION_SERVICE_UNAVAILABLE') {
+        return res.status(503).json({
+          code: 'MODERATION_SERVICE_UNAVAILABLE',
+          message: '审核服务繁忙，请稍后重试'
+        });
+      }
       if (err.code === 'ER_NO_REFERENCED_ROW_2') {
-        return res.status(400).json({ message: 'user_id 不存在' });
+        return res.status(400).json({ code: 'INVALID_INPUT', message: 'user_id 不存在' });
       }
       console.error(err);
-      res.status(500).json({ message: '创建帖子失败' });
+      res.status(500).json({ code: 'INTERNAL_ERROR', message: '创建帖子失败' });
     }
   },
 
@@ -159,7 +178,23 @@ const postController = {
   // 删除帖子
   remove: async (req, res) => {
     try {
-      const [result] = await db.execute('DELETE FROM `post` WHERE id = ?', [req.params.id]);
+      const postId = Number(req.params.id);
+      const requesterId = Number(req.user?.id);
+      const requesterRole = req.user?.role;
+
+      const [rows] = await db.execute('SELECT id, user_id FROM `post` WHERE id = ?', [postId]);
+      if (rows.length === 0) {
+        return res.status(404).json({ message: '帖子不存在' });
+      }
+
+      const post = rows[0];
+      const isOwner = Number(post.user_id) === requesterId;
+      const isAdmin = requesterRole === 'admin';
+      if (!isOwner && !isAdmin) {
+        return res.status(403).json({ message: '无权限删除该帖子' });
+      }
+
+      const [result] = await db.execute('DELETE FROM `post` WHERE id = ?', [postId]);
       if (result.affectedRows === 0) {
         return res.status(404).json({ message: '帖子不存在' });
       }
@@ -178,7 +213,11 @@ const postController = {
     try {
       const postId = Number(req.params.id);
       const [rows] = await db.execute(
-        'SELECT id, post_id, user_id, content, create_time FROM `comment` WHERE post_id = ? ORDER BY create_time ASC',
+        `SELECT c.id, c.post_id, c.user_id, c.content, c.create_time, u.username
+         FROM \`comment\` c
+         LEFT JOIN \`user\` u ON c.user_id = u.id
+         WHERE c.post_id = ?
+         ORDER BY c.create_time ASC`,
         [postId]
       );
       res.json({ list: rows });
@@ -195,26 +234,43 @@ const postController = {
       const { user_id, content } = req.body || {};
 
       if (!user_id) {
-        return res.status(400).json({ message: 'user_id 不能为空' });
+        return res.status(400).json({ code: 'INVALID_INPUT', message: 'user_id 不能为空' });
       }
-      if (!content) {
-        return res.status(400).json({ message: '评论内容不能为空' });
+      const safeContent = typeof content === 'string' ? content.trim() : '';
+      if (!safeContent) {
+        return res.status(400).json({ code: 'INVALID_INPUT', message: '评论内容不能为空' });
+      }
+
+      const moderation = await auditComment(safeContent);
+      if (!moderation.pass) {
+        return res.status(422).json({
+          code: 'CONTENT_REJECTED',
+          message: '评论内容不符合发布规范',
+          reason: moderation.reason,
+          category: moderation.category
+        });
       }
 
       await db.execute(
         'INSERT INTO `comment` (post_id, user_id, content) VALUES (?, ?, ?)',
-        [postId, Number(user_id), content]
+        [postId, Number(user_id), safeContent]
       );
       const [[row]] = await db.execute(
         'SELECT id, post_id, user_id, content, create_time FROM `comment` WHERE id = LAST_INSERT_ID()'
       );
       res.status(201).json(row);
     } catch (err) {
+      if (err instanceof ModerationServiceUnavailableError || err.code === 'MODERATION_SERVICE_UNAVAILABLE') {
+        return res.status(503).json({
+          code: 'MODERATION_SERVICE_UNAVAILABLE',
+          message: '审核服务繁忙，请稍后重试'
+        });
+      }
       if (err.code === 'ER_NO_REFERENCED_ROW_2') {
-        return res.status(400).json({ message: 'post_id 或 user_id 不存在' });
+        return res.status(400).json({ code: 'INVALID_INPUT', message: 'post_id 或 user_id 不存在' });
       }
       console.error(err);
-      res.status(500).json({ message: '创建评论失败' });
+      res.status(500).json({ code: 'INTERNAL_ERROR', message: '创建评论失败' });
     }
   },
 

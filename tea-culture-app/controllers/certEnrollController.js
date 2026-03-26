@@ -31,11 +31,36 @@ const certEnrollController = {
 
       // 检查是否已经报名
       const [[existing]] = await db.execute(
-        'SELECT id FROM certificate_enroll WHERE user_id = ? AND course_id = ?',
+        'SELECT id, status FROM certificate_enroll WHERE user_id = ? AND course_id = ? ORDER BY id DESC LIMIT 1',
         [userId, course_id]
       );
 
       if (existing) {
+        // status=2 表示已取消，允许恢复报名
+        if (Number(existing.status) === 2) {
+          await db.execute(
+            'UPDATE certificate_enroll SET status = 0, phone = ? WHERE id = ?',
+            [phone || null, existing.id]
+          );
+
+          await db.execute(
+            'UPDATE certificate_course SET current_students = current_students + 1 WHERE id = ?',
+            [course_id]
+          );
+
+          const [[row]] = await db.execute(
+            `SELECT e.id, e.user_id, e.course_id, e.phone, e.status, e.create_time,
+                    u.username, c.title as course_title
+             FROM certificate_enroll e
+             LEFT JOIN user u ON e.user_id = u.id
+             LEFT JOIN certificate_course c ON e.course_id = c.id
+             WHERE e.id = ?`,
+            [existing.id]
+          );
+
+          return res.status(201).json(row);
+        }
+
         return res.status(400).json({ message: '您已经报名过该课程' });
       }
 

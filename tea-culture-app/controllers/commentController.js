@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const { auditComment, ModerationServiceUnavailableError } = require('../services/moderationService');
 
 const commentController = {
   // 获取指定帖子的评论列表（分页）
@@ -18,10 +19,11 @@ const commentController = {
       }
 
       const [rows] = await db.execute(
-        `SELECT id, post_id, user_id, content, create_time
-         FROM comment
-         WHERE post_id = ?
-         ORDER BY create_time ASC
+        `SELECT c.id, c.post_id, c.user_id, c.content, c.create_time, u.username
+         FROM comment c
+         LEFT JOIN \`user\` u ON c.user_id = u.id
+         WHERE c.post_id = ?
+         ORDER BY c.create_time ASC
          LIMIT ${limitNum} OFFSET ${offsetNum}`,
         [postId]
       );
@@ -45,7 +47,10 @@ const commentController = {
   getById: async (req, res) => {
     try {
       const [rows] = await db.execute(
-        'SELECT id, post_id, user_id, content, create_time FROM comment WHERE id = ?',
+        `SELECT c.id, c.post_id, c.user_id, c.content, c.create_time, u.username
+         FROM comment c
+         LEFT JOIN \`user\` u ON c.user_id = u.id
+         WHERE c.id = ?`,
         [req.params.id]
       );
       if (rows.length === 0) {
@@ -65,10 +70,11 @@ const commentController = {
       const { user_id, content } = req.body || {};
 
       if (!user_id) {
-        return res.status(400).json({ message: 'user_id 不能为空' });
+        return res.status(400).json({ code: 'INVALID_INPUT', message: 'user_id 不能为空' });
       }
-      if (!content || content.trim() === '') {
-        return res.status(400).json({ message: '评论内容不能为空' });
+      const safeContent = typeof content === 'string' ? content.trim() : '';
+      if (!safeContent) {
+        return res.status(400).json({ code: 'INVALID_INPUT', message: '评论内容不能为空' });
       }
 
       // 验证帖子是否存在
@@ -77,9 +83,19 @@ const commentController = {
         return res.status(404).json({ message: '帖子不存在' });
       }
 
+      const moderation = await auditComment(safeContent);
+      if (!moderation.pass) {
+        return res.status(422).json({
+          code: 'CONTENT_REJECTED',
+          message: '评论内容不符合发布规范',
+          reason: moderation.reason,
+          category: moderation.category
+        });
+      }
+
       await db.execute(
         'INSERT INTO comment (post_id, user_id, content) VALUES (?, ?, ?)',
-        [Number(postId), Number(user_id), content.trim()]
+        [Number(postId), Number(user_id), safeContent]
       );
 
       const [[row]] = await db.execute(
@@ -87,11 +103,17 @@ const commentController = {
       );
       res.status(201).json(row);
     } catch (err) {
+      if (err instanceof ModerationServiceUnavailableError || err.code === 'MODERATION_SERVICE_UNAVAILABLE') {
+        return res.status(503).json({
+          code: 'MODERATION_SERVICE_UNAVAILABLE',
+          message: '审核服务繁忙，请稍后重试'
+        });
+      }
       if (err.code === 'ER_NO_REFERENCED_ROW_2') {
-        return res.status(400).json({ message: 'user_id 不存在' });
+        return res.status(400).json({ code: 'INVALID_INPUT', message: 'user_id 不存在' });
       }
       console.error(err);
-      res.status(500).json({ message: '发表评论失败' });
+      res.status(500).json({ code: 'INTERNAL_ERROR', message: '发表评论失败' });
     }
   },
 
@@ -120,10 +142,11 @@ const commentController = {
       const offsetNum = Number(offset);
 
       const [rows] = await db.execute(
-        `SELECT id, post_id, user_id, content, create_time
-         FROM comment
-         WHERE user_id = ?
-         ORDER BY create_time DESC
+        `SELECT c.id, c.post_id, c.user_id, c.content, c.create_time, u.username
+         FROM comment c
+         LEFT JOIN \`user\` u ON c.user_id = u.id
+         WHERE c.user_id = ?
+         ORDER BY c.create_time DESC
          LIMIT ${limitNum} OFFSET ${offsetNum}`,
         [userId]
       );

@@ -55,16 +55,17 @@
     <!-- 茶具商城 -->
     <view v-if="currentTab === 1" class="teaware-shop">
       <view class="category-filter">
-        <u-tag 
-          v-for="cat in teawareCategories" 
-          :key="cat"
-          :text="cat" 
-          size="small"
-          :type="selectedCategory === cat ? 'primary' : 'info'"
-          :plain="selectedCategory !== cat"
-          @click="selectCategory(cat)"
-          margin="0 15rpx 15rpx 0"
-        ></u-tag>
+        <view class="chip-wrap">
+          <view
+            v-for="cat in teawareCategories"
+            :key="cat"
+            class="chip"
+            :class="{ active: selectedCategory === cat }"
+            @click="selectCategory(cat)"
+          >
+            <text class="chip-text">{{ cat }}</text>
+          </view>
+        </view>
       </view>
 
       <u-loading-icon v-if="teawareLoading" mode="circle" text="加载中..."></u-loading-icon>
@@ -108,16 +109,18 @@
       </view>
 
       <view class="cert-filter">
-        <u-tag 
-          v-for="lv in certLevels" 
-          :key="lv"
-          :text="lv" 
-          size="small"
-          :type="selectedLevel === lv ? 'primary' : 'info'"
-          :plain="selectedLevel !== lv"
-          @click="selectLevel(lv)"
-          margin="0 15rpx 15rpx 0"
-        ></u-tag>
+        <view class="filter-title">认证等级</view>
+        <view class="chip-wrap">
+          <view
+            v-for="lv in certLevels"
+            :key="lv"
+            class="chip"
+            :class="{ active: selectedLevel === lv }"
+            @click="selectLevel(lv)"
+          >
+            <text class="chip-text">{{ lv }}</text>
+          </view>
+        </view>
       </view>
 
       <u-loading-icon v-if="certLoading" mode="circle" text="加载中..."></u-loading-icon>
@@ -129,7 +132,7 @@
           class="cert-card"
         >
           <view class="cert-icon">
-            <u-icon name="medal" color="#ffc107" size="40"></u-icon>
+            <u-icon name="star-fill" color="#ffc107" size="40"></u-icon>
           </view>
           <view class="cert-info">
             <u-text :text="cert.title" size="17" bold color="#303133"></u-text>
@@ -145,11 +148,18 @@
             <view class="cert-footer">
               <u-text :text="'开课时间：' + formatDate(cert.start_date)" size="12" color="#909399"></u-text>
               <u-button 
-                v-if="cert.status === 1"
+                v-if="cert.status === 1 && cert.enrolled"
                 size="mini" 
-                :type="cert.enrolled ? 'info' : 'primary'" 
-                :text="cert.enrolled ? '已报名' : '立即报名'" 
-                :disabled="cert.enrolled"
+                type="error"
+                text="取消报名"
+                plain
+                @click.stop="cancelCertEnroll(cert)"
+              ></u-button>
+              <u-button 
+                v-else-if="cert.status === 1"
+                size="mini" 
+                type="primary"
+                text="立即报名"
                 color="#5d8a6a"
                 @click.stop="openCertEnroll(cert)"
               ></u-button>
@@ -251,6 +261,7 @@ const buyAddress = ref('');
 const certEnrollPhone = ref('');
 const selectedCourse = ref(null);
 const enrolledCourseIds = ref(new Set());
+const enrollIdByCourseId = ref(new Map());
 
 // 茶叶商品
 const teaProducts = ref([]);
@@ -365,6 +376,7 @@ const loadMyCertEnrollments = async () => {
   const token = uni.getStorageSync('token');
   if (!token) {
     enrolledCourseIds.value = new Set();
+    enrollIdByCourseId.value = new Map();
     return;
   }
 
@@ -380,7 +392,14 @@ const loadMyCertEnrollments = async () => {
         ? res.data
         : (res.data?.data || res.list || []));
 
-    enrolledCourseIds.value = new Set(list.map(item => item.course_id));
+    const activeList = list.filter(item => Number(item.status) !== 2);
+    enrolledCourseIds.value = new Set(activeList.map(item => item.course_id));
+
+    const idMap = new Map();
+    activeList.forEach(item => {
+      idMap.set(item.course_id, item.id);
+    });
+    enrollIdByCourseId.value = idMap;
   } catch (e) {
     console.error('加载报名记录失败:', e);
   }
@@ -416,7 +435,8 @@ const loadCertifications = async () => {
     console.log('[certificates] parsed list:', list);
     certifications.value = list.map(item => ({
       ...item,
-      enrolled: enrolledCourseIds.value.has(item.id)
+      enrolled: enrolledCourseIds.value.has(item.id),
+      enrollId: enrollIdByCourseId.value.get(item.id) || null
     }));
     
     if (list.length === 0) {
@@ -476,6 +496,34 @@ const submitCertEnroll = async () => {
     console.error('报名失败:', e);
     uni.showToast({ title: '报名失败', icon: 'none' });
   }
+};
+
+const cancelCertEnroll = (course) => {
+  if (!course?.enrollId) {
+    return uni.showToast({ title: '未找到报名记录', icon: 'none' });
+  }
+
+  uni.showModal({
+    title: '取消报名',
+    content: '确定要取消该课程报名吗？',
+    success: async (res) => {
+      if (!res.confirm) return;
+
+      try {
+        await request({
+          url: `/certEnroll/${course.enrollId}`,
+          method: 'DELETE'
+        });
+
+        uni.showToast({ title: '已取消报名', icon: 'success' });
+        await loadMyCertEnrollments();
+        await loadCertifications();
+      } catch (e) {
+        console.error('取消报名失败:', e);
+        uni.showToast({ title: e?.message || '取消失败', icon: 'none' });
+      }
+    }
+  });
 };
 
 const openBuy = (product, type) => {
@@ -635,6 +683,7 @@ const goProductDetail = (id, type) => {
       padding: 20rpx;
       background-color: #fff;
       margin-bottom: 20rpx;
+      border-radius: 12rpx;
     }
 
     .product-list {
@@ -678,6 +727,13 @@ const goProductDetail = (id, type) => {
       background-color: #fff;
       margin-bottom: 20rpx;
       border-radius: 12rpx;
+    }
+
+    .filter-title {
+      font-size: 24rpx;
+      font-weight: 600;
+      color: #3a3f44;
+      margin-bottom: 14rpx;
     }
 
     .cert-list {
@@ -733,6 +789,37 @@ const goProductDetail = (id, type) => {
       display: flex;
       justify-content: space-between;
       gap: 20rpx;
+    }
+  }
+
+  .chip-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14rpx;
+  }
+
+  .chip {
+    padding: 10rpx 22rpx;
+    border-radius: 999rpx;
+    border: 1rpx solid #e4e7eb;
+    background: #f6f7f9;
+    transition: all 0.2s ease;
+
+    .chip-text {
+      font-size: 24rpx;
+      color: #646a73;
+      line-height: 1;
+    }
+
+    &.active {
+      background: linear-gradient(135deg, #5d8a6a 0%, #4d7458 100%);
+      border-color: transparent;
+      box-shadow: 0 6rpx 14rpx rgba(93, 138, 106, 0.22);
+
+      .chip-text {
+        color: #fff;
+        font-weight: 600;
+      }
     }
   }
 }

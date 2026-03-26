@@ -57,6 +57,7 @@ const postList = ref([]);
 const page = ref(1);
 const loadStatus = ref('loadmore');
 const currentCategory = ref(0);
+const isRefreshing = ref(false);
 
 // 格式化类型
 const formatType = (type) => {
@@ -88,6 +89,10 @@ const formatPostTime = (value) => {
 
 const getPosts = async (isRefresh = false) => {
   if (isRefresh) {
+    isRefreshing.value = true;
+  }
+
+  if (isRefresh) {
     page.value = 1;
   }
   
@@ -110,7 +115,6 @@ const getPosts = async (isRefresh = false) => {
 
     if (isRefresh) {
       postList.value = newList;
-      uni.stopPullDownRefresh();
     } else {
       postList.value = [...postList.value, ...newList];
     }
@@ -124,6 +128,11 @@ const getPosts = async (isRefresh = false) => {
   } catch (e) {
     console.error('获取社区列表失败:', e);
     loadStatus.value = 'loadmore';
+  } finally {
+    if (isRefresh) {
+      uni.stopPullDownRefresh();
+      isRefreshing.value = false;
+    }
   }
 };
 
@@ -237,6 +246,7 @@ const goDetail = (id) => {
         display: -webkit-box;
         -webkit-box-orient: vertical;
         -webkit-line-clamp: 3; // 最多显示3行
+        line-clamp: 3;
         overflow: hidden;
       }
     }

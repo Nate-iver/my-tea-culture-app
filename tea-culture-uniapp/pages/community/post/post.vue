@@ -42,8 +42,7 @@ const submitPost = async () => {
       method: 'POST',
       data: {
         ...form.value,
-        user_id: userInfo.id, // 【核心】补齐后端要求的 user_id
-        status: 1            // 【核心】设为 1，否则你列表查不出来（后端默认是0）
+        user_id: userInfo.id // 【核心】补齐后端要求的 user_id
       }
     });
     
@@ -53,7 +52,12 @@ const submitPost = async () => {
     setTimeout(() => uni.navigateBack(), 1500);
   } catch (e) {
     console.error('发布失败详情:', e);
-    // 这里如果报错，去 F12 Network 看一眼 Response
+    if (e?.code === 'CONTENT_REJECTED') {
+      return uni.showToast({ title: e.reason || '帖子内容不符合发布规范', icon: 'none', duration: 2800 });
+    }
+    if (e?.code === 'MODERATION_SERVICE_UNAVAILABLE') {
+      return uni.showToast({ title: '审核服务繁忙，请稍后重试', icon: 'none', duration: 2800 });
+    }
     uni.showToast({ title: e.message || '发布失败', icon: 'none' });
   } finally {
     loading.value = false;
