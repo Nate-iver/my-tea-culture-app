@@ -279,6 +279,41 @@ const postController = {
   removeComment: async (req, res) => {
     try {
       const commentId = Number(req.params.commentId);
+      const postId = Number(req.params.id);
+      const requesterId = Number(req.user?.id);
+      const requesterRole = req.user?.role;
+
+      // 查询评论信息
+      const [commentRows] = await db.execute(
+        'SELECT id, user_id FROM `comment` WHERE id = ?',
+        [commentId]
+      );
+      if (commentRows.length === 0) {
+        return res.status(404).json({ message: '评论不存在' });
+      }
+
+      const comment = commentRows[0];
+      const isCommentAuthor = Number(comment.user_id) === requesterId;
+
+      // 查询帖子信息（用于检查是否是帖子作者）
+      const [postRows] = await db.execute(
+        'SELECT id, user_id FROM `post` WHERE id = ?',
+        [postId]
+      );
+      if (postRows.length === 0) {
+        return res.status(404).json({ message: '帖子不存在' });
+      }
+
+      const post = postRows[0];
+      const isPostAuthor = Number(post.user_id) === requesterId;
+      const isAdmin = requesterRole === 'admin';
+
+      // 权限检查：允许评论作者、帖子作者或管理员删除
+      if (!isCommentAuthor && !isPostAuthor && !isAdmin) {
+        return res.status(403).json({ message: '无权限删除该评论' });
+      }
+
+      // 执行删除
       const [result] = await db.execute('DELETE FROM `comment` WHERE id = ?', [commentId]);
       if (result.affectedRows === 0) {
         return res.status(404).json({ message: '评论不存在' });

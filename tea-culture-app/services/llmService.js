@@ -1,10 +1,25 @@
 const axios = require('axios');
+const { Converter } = require('opencc-js');
 
 const LLM_API_URL = process.env.LLM_API_URL || 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions';
 const LLM_API_KEY = process.env.LLM_API_KEY || 'sk-xxxxxxxxxx';
+const t2sConverter = Converter({ from: 'tw', to: 'cn' });
+
+function toSimplified(text) {
+  if (typeof text !== 'string') {
+    return '';
+  }
+
+  try {
+    return t2sConverter(text);
+  } catch (error) {
+    console.error('[llmService] 简繁转换失败:', error.message);
+    return text;
+  }
+}
 
 function buildFallbackAnswer(question, context) {
-  const contextLines = String(context || '')
+  const contextLines = toSimplified(String(context || ''))
     .split('\n')
     .map((line) => line.trim())
     .filter(Boolean)
@@ -31,7 +46,8 @@ async function generateAnswer(question, context) {
     throw new Error('question 必须是非空字符串');
   }
 
-  const safeContext = typeof context === 'string' && context.trim() ? context : '暂无可用参考资料';
+  const safeContext =
+    typeof context === 'string' && context.trim() ? toSimplified(context) : '暂无可用参考资料';
 
   // 加上“请使用简体中文回答”的强制指令
 const prompt = `
@@ -83,7 +99,7 @@ ${question}
       throw new Error('LLM 响应中未找到文本内容');
     }
 
-    return String(text).trim();
+    return toSimplified(String(text).trim());
   } catch (error) {
     if (error.response) {
       console.error('[llmService] LLM API 请求失败:', error.response.status);

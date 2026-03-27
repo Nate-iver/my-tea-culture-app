@@ -25,7 +25,13 @@
       <view v-for="(item, index) in commentList" :key="item.id" class="comment-item">
         <u-avatar :text="(item.username && item.username.substring(0, 1)) || '友'" size="24" bg-color="#eee"></u-avatar>
         <view class="comment-right">
-          <view class="comment-user">{{ item.username || '匿名茶友' }}</view>
+          <view class="comment-user-line">
+            <text class="comment-user">{{ item.username || '匿名茶友' }}</text>
+            <view v-if="canDeleteComment(item)" class="comment-delete-btn" @tap.stop="deleteComment(item.id)">
+              <u-icon name="trash" size="13" color="#ff6b6b"></u-icon>
+              <text class="delete-text">删除</text>
+            </view>
+          </view>
           <view class="comment-text">{{ item.content }}</view>
           <view class="comment-time">{{ item.create_time }}</view>
         </view>
@@ -164,6 +170,34 @@ const submitComment = async () => {
   }
 };
 
+const canDeleteComment = (comment) => {
+  if (!comment || currentUserId.value === null) return false;
+  const isCommentAuthor = Number(comment.user_id) === Number(currentUserId.value);
+  const isPostAuthor = post.value && Number(post.value.user_id) === Number(currentUserId.value);
+  return isCommentAuthor || isPostAuthor;
+};
+
+const deleteComment = (commentId) => {
+  uni.showModal({
+    title: '删除评论',
+    content: '确定要删除这条评论吗？',
+    success: async (res) => {
+      if (!res.confirm) return;
+      try {
+        await request({
+          url: `/posts/${postId.value}/comments/${commentId}`,
+          method: 'DELETE'
+        });
+
+        uni.showToast({ title: '删除成功', icon: 'success' });
+        loadComments();
+      } catch (e) {
+        uni.showToast({ title: e?.message || '删除失败，请重试', icon: 'none' });
+      }
+    }
+  });
+};
+
 const deleteCurrentPost = () => {
   if (!canDelete.value) return;
 
@@ -247,7 +281,38 @@ const deleteCurrentPost = () => {
     .comment-item {
       display: flex; margin-bottom: 30rpx;
       .comment-right { flex: 1; margin-left: 20rpx; border-bottom: 1rpx solid #eee; padding-bottom: 20rpx;
-        .comment-user { font-size: 26rpx; color: #555; font-weight: bold; }
+        .comment-user-line {
+          display: flex;
+          align-items: center;
+          gap: 10rpx;
+          margin-bottom: 8rpx;
+
+          .comment-user { font-size: 26rpx; color: #555; font-weight: bold; flex: 1; }
+          
+          .comment-delete-btn {
+            height: 44rpx;
+            padding: 0 14rpx;
+            border-radius: 22rpx;
+            border: 1rpx solid rgba(255, 107, 107, 0.35);
+            background: rgba(255, 107, 107, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6rpx;
+            flex-shrink: 0;
+
+            .delete-text {
+              font-size: 20rpx;
+              line-height: 1;
+              color: #ff6b6b;
+              font-weight: 500;
+            }
+
+            &:active {
+              background: rgba(255, 107, 107, 0.15);
+            }
+          }
+        }
         .comment-text { font-size: 28rpx; color: #333; margin: 10rpx 0; }
         .comment-time { font-size: 22rpx; color: #999; }
       }
