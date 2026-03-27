@@ -2,17 +2,24 @@
   <view class="detail-container">
     <view class="post-main" v-if="post">
       <view class="post-header">
-        <u-avatar :text="post.username ? post.username.substring(0,1) : '茶'" size="40"></u-avatar>
-        <view class="user-info">
-          <text class="username">{{ post.username || '茶友' }}</text>
-          <text class="time">{{ post.create_time }}</text>
+        <view class="user-left">
+          <u-avatar :text="post.username ? post.username.substring(0,1) : '茶'" size="40"></u-avatar>
+          <view class="user-info">
+            <text class="username">{{ post.username || '茶友' }}</text>
+            <text class="time">{{ post.create_time }}</text>
+          </view>
+        </view>
+        <view v-if="canDelete" class="delete-btn" @tap.stop="deleteCurrentPost">
+          <u-icon name="trash" size="14" color="#ff6b6b"></u-icon>
+          <text class="delete-text">删除</text>
         </view>
       </view>
       <text class="title">{{ post.title }}</text>
       <text class="content">{{ post.content }}</text>
     </view>
+    <u-empty v-else text="帖子不存在或加载失败" mode="data" margin-top="80"></u-empty>
 
-    <view class="comment-section">
+    <view class="comment-section" v-if="post">
       <view class="section-title">全部评论 ({{ commentList.length }})</view>
       
       <view v-for="(item, index) in commentList" :key="item.id" class="comment-item">
@@ -27,7 +34,8 @@
       <u-empty v-if="commentList.length === 0" text="暂无评论, 快来抢沙发" mode="message" margin-top="40"></u-empty>
     </view>
 
-    <view class="comment-bar-placeholder"></view> <view class="comment-bar">
+    <view v-if="post" class="comment-bar-placeholder"></view>
+    <view v-if="post" class="comment-bar">
       <view class="bar-container">
         <view class="input-section">
           <u-icon name="edit-pen" size="18" color="#999"></u-icon>
@@ -48,7 +56,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import { request } from '@/utils/http.js';
 
@@ -58,31 +66,68 @@ const commentList = ref([]);
 const total = ref(0);
 const commentText = ref('');
 const submitting = ref(false);
+const currentUserId = ref(null);
+const canDelete = computed(() => {
+  if (!post.value || currentUserId.value === null) return false;
+  return Number(post.value.user_id) === Number(currentUserId.value);
+});
+
+const loadCurrentUser = () => {
+  const userInfo = uni.getStorageSync('userInfo');
+  currentUserId.value = userInfo?.id ?? null;
+};
 
 onLoad((options) => {
-  postId.value = options.id;
-  loadPostDetail();
-  loadComments();
+  const rawId = options?.id ?? options?.postId;
+  const normalizedId = Number(rawId);
+  if (!rawId || Number.isNaN(normalizedId) || normalizedId <= 0) {
+    uni.showToast({ title: '帖子参数异常', icon: 'none' });
+    setTimeout(() => {
+      uni.navigateBack();
+    }, 800);
+    return;
+  }
+
+  postId.value = normalizedId;
+  loadCurrentUser();
+  initDetailPage();
 });
+
+const initDetailPage = async () => {
+  const loaded = await loadPostDetail();
+  if (loaded) {
+    loadComments();
+  }
+};
 
 // 获取帖子详情 (假设你后端 posts 路由有 getById)
 const loadPostDetail = async () => {
+  if (!postId.value) return false;
+
   try {
     const res = await request({ url: `/posts/${postId.value}` });
     post.value = res;
-  } catch (e) { console.error(e); }
+    return true;
+  } catch (e) {
+    console.error('[detail] 加载帖子详情失败:', e);
+    return false;
+  }
 };
 
 // 获取评论列表 (对应你的 listByPost)
 const loadComments = async () => {
+  if (!postId.value) return;
+
   try {
     const res = await request({ 
       url: `/posts/${postId.value}/comments`, // 确保你的后端路由挂载路径正确
       method: 'GET'
     });
-    commentList.value = res.list;
-    total.value = res.total;
-  } catch (e) { console.error(e); }
+    commentList.value = Array.isArray(res?.list) ? res.list : [];
+    total.value = Number(res?.total || commentList.value.length);
+  } catch (e) {
+    console.error('[detail] 加载评论失败:', e);
+  }
 };
 
 // 发表评论 (对应你的 create)
@@ -118,6 +163,32 @@ const submitComment = async () => {
     submitting.value = false;
   }
 };
+
+const deleteCurrentPost = () => {
+  if (!canDelete.value) return;
+
+  uni.showModal({
+    title: '删除确认',
+    content: '确定要删除这个帖子吗？',
+    success: async (res) => {
+      if (!res.confirm) return;
+      try {
+        await request({
+          url: `/posts/${postId.value}`,
+          method: 'DELETE'
+        });
+
+        uni.$emit('refreshCommunity');
+        uni.showToast({ title: '删除成功', icon: 'success' });
+        setTimeout(() => {
+          uni.navigateBack();
+        }, 500);
+      } catch (e) {
+        uni.showToast({ title: e?.message || '删除失败，请重试', icon: 'none' });
+      }
+    }
+  });
+};
 </script>
 
 <style lang="scss" scoped>
@@ -131,10 +202,39 @@ const submitComment = async () => {
     padding: 30rpx;
     margin-bottom: 20rpx;
     .post-header {
-      display: flex; align-items: center; margin-bottom: 30rpx;
-      .user-info { margin-left: 20rpx; 
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 30rpx;
+
+      .user-left {
+        display: flex;
+        align-items: center;
+        min-width: 0;
+      }
+
+      .user-info {
+        margin-left: 20rpx;
         .username { font-size: 28rpx; color: #333; font-weight: bold; display: block; }
         .time { font-size: 22rpx; color: #999; }
+      }
+
+      .delete-btn {
+        height: 50rpx;
+        padding: 0 16rpx;
+        border-radius: 25rpx;
+        border: 1rpx solid rgba(255, 107, 107, 0.35);
+        background: rgba(255, 107, 107, 0.08);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6rpx;
+
+        .delete-text {
+          font-size: 22rpx;
+          line-height: 1;
+          color: #ff6b6b;
+        }
       }
     }
     .title { font-size: 36rpx; font-weight: bold; color: #333; display: block; margin-bottom: 20rpx; }

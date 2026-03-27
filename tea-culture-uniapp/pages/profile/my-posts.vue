@@ -2,13 +2,15 @@
   <view class="my-posts-container">
     <!-- 顶部 -->
     <view class="top-bar">
-      <u-text text="我的发布" size="20" bold color="#303133"></u-text>
-      <u-button 
+      <u-button
         icon="plus"
+        text="发布帖子"
         shape="circle"
         size="small"
+        type="primary"
+        color="#5d8a6a"
         @click="goNewPost"
-        customStyle="position: absolute; right: 30rpx;"
+        customStyle="padding: 0 24rpx; height: 62rpx; font-weight: 600;"
       ></u-button>
     </view>
 
@@ -33,8 +35,10 @@
             <u-text :text="post.title" size="16" bold color="#303133" :lines="2"></u-text>
           </view>
           <view class="post-actions">
-            <u-icon name="edit-pen" size="20" color="#5d8a6a" @click.stop="editPost(post.id)"></u-icon>
-            <u-icon name="trash" size="20" color="#ff6b6b" margin="0 0 0 15rpx" @click.stop="deletePost(post.id)"></u-icon>
+            <view class="action-btn delete" @tap.stop="onDeleteClick(post.id)">
+              <u-icon name="trash" size="16" color="#ff6b6b"></u-icon>
+              <text class="action-text">删除</text>
+            </view>
           </view>
         </view>
 
@@ -47,16 +51,14 @@
             <u-icon name="chat" color="#909399" size="16"></u-icon>
             <u-text :text="post.comments || 0" size="12" color="#909399" margin="0 0 0 5rpx"></u-text>
           </view>
-          <u-text :text="formatDate(post.created_at)" size="12" color="#bdbdbd"></u-text>
-        </view>
-
-        <!-- 状态标签 -->
-        <view class="post-status">
-          <u-tag 
-            :text="post.status === 1 ? '已发布' : '草稿'" 
-            :type="post.status === 1 ? 'success' : 'info'"
-            size="mini"
-          ></u-tag>
+          <view class="post-meta-right">
+            <u-text :text="formatDate(post.created_at)" size="12" color="#bdbdbd"></u-text>
+            <u-tag 
+              :text="post.status === 1 ? '已发布' : '草稿'" 
+              :type="post.status === 1 ? 'success' : 'info'"
+              size="mini"
+            ></u-tag>
+          </view>
         </view>
       </view>
     </view>
@@ -96,7 +98,8 @@ const loadMyPosts = async () => {
       method: 'GET',
       data: {
         page: 1,
-        limit: 100  // 增加limit以获取更多帖子
+        pageSize: 100,
+        user_id: currentUserId
       }
     });
 
@@ -113,7 +116,7 @@ const loadMyPosts = async () => {
     }
 
     // 过滤只显示当前用户的帖子
-    posts.value = allPosts.filter(post => post.user_id === currentUserId);
+    posts.value = allPosts.filter(post => Number(post.user_id) === Number(currentUserId));
     console.log('[my-posts] 加载完成:', posts.value.length, '条当前用户的帖子');
   } catch (e) {
     console.error('[my-posts] 加载失败:', e);
@@ -146,10 +149,8 @@ const deletePost = async (postId) => {
   });
 };
 
-const editPost = (postId) => {
-  uni.navigateTo({
-    url: `/pages/community/post/post?id=${postId}`
-  });
+const onDeleteClick = (postId) => {
+  deletePost(postId);
 };
 
 const goPostDetail = (postId) => {
@@ -176,10 +177,12 @@ onMounted(() => {
   background-color: #f5f5f5;
 
   .top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     padding: 30rpx;
     background-color: #fff;
     border-bottom: 1rpx solid #f0f0f0;
-    position: relative;
   }
 
   .empty-state {
@@ -217,6 +220,29 @@ onMounted(() => {
           display: flex;
           gap: 10rpx;
           flex-shrink: 0;
+          position: relative;
+          z-index: 2;
+
+          .action-btn {
+            min-width: 92rpx;
+            height: 52rpx;
+            padding: 0 12rpx;
+            border-radius: 26rpx;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6rpx;
+            background-color: #f6f7f8;
+
+            &.delete {
+              border: 1rpx solid rgba(255, 107, 107, 0.28);
+            }
+
+            .action-text {
+              font-size: 22rpx;
+              line-height: 1;
+            }
+          }
         }
       }
 
@@ -235,12 +261,12 @@ onMounted(() => {
           display: flex;
           align-items: center;
         }
-      }
 
-      .post-status {
-        position: absolute;
-        top: 20rpx;
-        right: 20rpx;
+        .post-meta-right {
+          display: flex;
+          align-items: center;
+          gap: 12rpx;
+        }
       }
     }
   }

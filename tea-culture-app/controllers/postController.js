@@ -42,7 +42,7 @@ const postController = {
       );
 
       const [countRows] = await db.execute(
-        `SELECT COUNT(*) AS total FROM \`post\` ${whereSql}`,
+        `SELECT COUNT(*) AS total FROM \`post\` p ${whereSql}`,
         params
       );
       const total = countRows[0] && countRows[0].total !== undefined ? Number(countRows[0].total) : 0;
@@ -194,15 +194,16 @@ const postController = {
         return res.status(403).json({ message: '无权限删除该帖子' });
       }
 
+      // 先删除该帖子下的所有评论（级联删除）
+      await db.execute('DELETE FROM `comment` WHERE post_id = ?', [postId]);
+
+      // 再删除帖子本身
       const [result] = await db.execute('DELETE FROM `post` WHERE id = ?', [postId]);
       if (result.affectedRows === 0) {
         return res.status(404).json({ message: '帖子不存在' });
       }
       res.json({ message: '删除成功' });
     } catch (err) {
-      if (err.code === 'ER_ROW_IS_REFERENCED_2') {
-        return res.status(400).json({ message: '该帖子有关联评论，无法删除' });
-      }
       console.error(err);
       res.status(500).json({ message: '删除帖子失败' });
     }
