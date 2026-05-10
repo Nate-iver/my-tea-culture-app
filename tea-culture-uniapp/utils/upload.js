@@ -38,7 +38,7 @@ export const uploadImage = async (filePath, uploadUrl = '/upload') => {
     const fileName = filePath.split('/').pop();
     
     uni.uploadFile({
-      url: `http://localhost:8000/api${uploadUrl}`,
+      url: `http://10.168.107.184:8000/api${uploadUrl}`,
       filePath: filePath,
       name: 'file',
       header: {

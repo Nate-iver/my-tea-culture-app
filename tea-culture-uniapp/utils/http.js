@@ -3,7 +3,7 @@
 let baseUrl = '/api';
 
 // #ifdef APP-PLUS
-baseUrl = 'http://192.168.1.6:3000/api';
+baseUrl = 'http://10.168.107.184:3000/api';
 // #endif
 
 export const request = (options) => {

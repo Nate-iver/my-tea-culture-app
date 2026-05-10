@@ -13,7 +13,9 @@ from sentence_transformers import SentenceTransformer
 from pydantic import BaseModel
 import uvicorn
 
+# 使用缓存中的模型，禁用网络下载
 MODEL_NAME = "shibing624/text2vec-base-chinese"
+os.environ["HF_HUB_OFFLINE"] = "1"  # 禁用在线下载，仅使用本地缓存
 
 app = FastAPI(title="茶文化 App - 本地 AI 向量服务")
 
@@ -23,15 +25,19 @@ _model: Optional[SentenceTransformer] = None
 def get_model() -> SentenceTransformer:
     global _model
     if _model is None:
-        print("首次请求，开始加载 AI 模型...")
+        print("🔄 加载本地模型...")
         start = time.time()
-        # 懒加载：避免进程启动阶段阻塞太久。
         _model = SentenceTransformer(MODEL_NAME)
-        print(f"AI 模型加载成功，用时 {time.time() - start:.2f}s")
+        print(f"✅ 模型加载完成，用时 {time.time() - start:.2f}s")
     return _model
 
 class TextBatch(BaseModel):
     texts: List[str] = ["龙井茶", "碧螺春"]
+
+@app.on_event("startup")
+async def startup_event():
+    """应用启动时预加载模型"""
+    get_model()
 
 @app.post("/embed")
 async def get_embeddings(data: TextBatch):
@@ -47,6 +53,7 @@ async def health():
         "model_loaded": _model is not None,
         "model_name": MODEL_NAME,
         "hf_home": os.environ.get("HF_HOME"),
+        "offline_mode": os.environ.get("HF_HUB_OFFLINE") == "1",
     }
 
 if __name__ == "__main__":

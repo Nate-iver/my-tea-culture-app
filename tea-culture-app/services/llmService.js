@@ -71,7 +71,7 @@ ${question}
     const response = await axios.post(
       LLM_API_URL,
       {
-        model: 'qwen-turbo',
+        model: 'qwen-flash',
         messages: [
           {
             role: 'user',
