@@ -8,7 +8,7 @@
       </view>
     </view>
     
-    <image v-if="article.cover_image" :src="article.cover_image" mode="widthFix" class="main-img"></image>
+    <image v-if="article.cover_image" :src="formatImageUrl(article.cover_image)" mode="widthFix" class="main-img"></image>
 
     <view class="content-body">
       <u-parse :content="article.content"></u-parse>
@@ -19,9 +19,16 @@
 <script setup>
 import { ref } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
-import { request } from '@/utils/http.js';
+import { request, getServerHost } from '@/utils/http.js';
 
 const article = ref(null);
+const serverHost = getServerHost();
+
+const formatImageUrl = (url) => {
+  if (!url) return '';
+  if (url.startsWith('http')) return url;
+  return `${serverHost}${url}`;
+};
 
 onLoad(async (options) => {
   const res = await request({

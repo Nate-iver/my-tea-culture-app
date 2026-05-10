@@ -54,7 +54,7 @@
           @click="goDetail(item.id)"
         >
           <u-image
-            :src="item.cover_image || '/static/placeholders/cover-square.png'"
+            :src="formatImageUrl(item.cover_image)"
             width="120rpx"
             height="120rpx"
             radius="12rpx"
@@ -144,7 +144,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { request } from '../../utils/http.js';
+import { request, getServerHost } from '../../utils/http.js';
 
 const contentList = ref([]);
 const hotParties = ref([]);
@@ -155,6 +155,13 @@ const enrollPhone = ref('');
 const selectedEvent = ref(null);
 const enrolledEventIds = ref(new Set());
 const enrollIdByEventId = ref(new Map());
+const serverHost = getServerHost();
+
+const formatImageUrl = (url) => {
+  if (!url) return '/static/placeholders/cover-square.png';
+  if (url.startsWith('http')) return url;
+  return `${serverHost}${url}`;
+};
 
 const swiperList = ref([
   { image: '/static/placeholders/banner-tea-1.svg' },

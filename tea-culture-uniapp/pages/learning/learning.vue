@@ -19,7 +19,7 @@
       >
         <image 
           class="cover" 
-          :src="item.cover_image || '/static/placeholders/cover-rect.png'" 
+          :src="formatImageUrl(item.cover_image)" 
           mode="aspectFill"
         ></image>
         <view class="info">
@@ -39,13 +39,20 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { request } from '@/utils/http.js';
+import { request, getServerHost } from '@/utils/http.js';
 import { onReachBottom, onPullDownRefresh } from '@dcloudio/uni-app';
 
 const list = ref([]);
 const page = ref(1);
 const loadStatus = ref('loadmore');
 const currentType = ref(''); // 默认为空，查全部
+const serverHost = getServerHost();
+
+const formatImageUrl = (url) => {
+  if (!url) return '/static/placeholders/cover-rect.png';
+  if (url.startsWith('http')) return url;
+  return `${serverHost}${url}`;
+};
 
 const categories = [
   { name: '全部', type: '' },

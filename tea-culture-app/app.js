@@ -28,6 +28,8 @@ app.use(express.urlencoded({ extended: true }));
 // 静态资源：将项目 images 目录暴露为 /uploads 和 /images
 app.use('/uploads', express.static(path.join(__dirname, 'images')));
 app.use('/images', express.static(path.join(__dirname, 'images')));
+// 兼容旧数据：暴露 images2 目录以便直接通过 URL 访问
+app.use('/images2', express.static(path.join(__dirname, 'images2')));
 
 // 挂载路由
 app.use('/api/auth', authRoutes);

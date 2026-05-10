@@ -41,7 +41,7 @@
                 @click.stop="openBuy(product, 'tea')"
                 customStyle="height: 46rpx;"
               ></u-button>
-              <u-text :text="'已售' + product.sales" size="12" color="#909399"></u-text>
+              <u-text v-if="product.sales > 0" :text="'已售' + product.sales" size="12" color="#909399"></u-text>
             </view>
           </view>
         </view>
@@ -90,7 +90,7 @@
                 @click.stop="openBuy(product, 'tool')"
                 customStyle="height: 46rpx;"
               ></u-button>
-              <u-text :text="'已售' + product.sales" size="12" color="#909399"></u-text>
+              <u-text v-if="product.sales > 0" :text="'已售' + product.sales" size="12" color="#909399"></u-text>
             </view>
           </view>
         </view>
