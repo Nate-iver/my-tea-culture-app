@@ -1,16 +1,5 @@
 <template>
   <view class="products-admin-container">
-    <!-- 自定义导航栏 -->
-    <u-navbar 
-      title="产品管理"
-      :background="{ background: '#fff' }"
-      :autoBack="false"
-    >
-      <view slot="left" @click="goBack" class="navbar-back">
-        <u-icon name="arrow-left" size="20" color="#303133"></u-icon>
-      </view>
-    </u-navbar>
-
     <!-- 顶部操作栏 -->
     <view class="top-bar">
       <u-button 
@@ -127,8 +116,7 @@ const deleteProduct = (productId) => {
 };
 
 const goBack = () => {
-  console.log('[products-admin] 返回到管理员首页');
-  backToAdminHome();
+  uni.navigateBack({ delta: 1 });
 };
 </script>
 

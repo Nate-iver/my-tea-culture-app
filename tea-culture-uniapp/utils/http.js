@@ -1,10 +1,15 @@
 // api/request.js
-// H5 走 Vite 代理；App 端需直连后端绝对地址。
-let baseUrl = '/api';
+// H5 和 App 都直接访问后端主机，避免图片和接口在不同端表现不一致。
+const BACKEND_HOST = 'http://10.168.107.184:3000';
+let baseUrl = `${BACKEND_HOST}/api`;
 
 // #ifdef APP-PLUS
-baseUrl = 'http://10.168.107.184:3000/api';
+baseUrl = `${BACKEND_HOST}/api`; 
 // #endif
+
+export const getServerHost = () => {
+    return BACKEND_HOST;
+};
 
 export const request = (options) => {
 	// 从本地缓存读取 token

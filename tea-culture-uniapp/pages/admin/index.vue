@@ -15,13 +15,13 @@
       </view>
 
       <view class="stat-card" @click="goPage('/pages/admin/products/index')">
-        <u-icon name="basket" color="#ffc107" size="40"></u-icon>
+        <u-icon name="bag-fill" color="#ffc107" size="40"></u-icon>
         <u-text :text="stats.products" size="24" bold color="#303133" margin="10rpx 0 0 0"></u-text>
         <u-text text="产品数" size="12" color="#909399" margin="5rpx 0 0 0"></u-text>
       </view>
 
       <view class="stat-card" @click="goPage('/pages/admin/certificates/index')">
-        <u-icon name="medal" color="#4caf50" size="40"></u-icon>
+        <u-icon name="star" color="#4caf50" size="40"></u-icon>
         <u-text :text="stats.certificates" size="24" bold color="#303133" margin="10rpx 0 0 0"></u-text>
         <u-text text="认证课程" size="12" color="#909399" margin="5rpx 0 0 0"></u-text>
       </view>
@@ -60,7 +60,7 @@
         <u-button 
           text="产品管理" 
           type="warning"
-          icon="basket"
+          icon="bag-fill"
           @click="goPage('/pages/admin/products/index')"
           customStyle="flex: 1;"
         ></u-button>
@@ -70,7 +70,7 @@
         <u-button 
           text="课程管理" 
           type="success"
-          icon="medal"
+          icon="star"
           @click="goPage('/pages/admin/certificates/index')"
           customStyle="flex: 1; margin-right: 10rpx;"
         ></u-button>

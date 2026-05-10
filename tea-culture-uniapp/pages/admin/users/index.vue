@@ -1,13 +1,5 @@
 <template>
   <view class="users-admin-container">
-    <!-- 自定义导航栏 -->
-    <u-navbar 
-      title="用户管理"
-      :is-back="true"
-      @back="goBack"
-      :background="{ background: '#fff' }"
-    ></u-navbar>
-
     <!-- 搜索栏 -->
     <view class="search-bar">
       <u-search 
@@ -232,7 +224,7 @@ const deleteUser = (user) => {
 };
 
 const goBack = () => {
-  backToAdminHome();
+  uni.navigateBack({ delta: 1 });
 };
 
 onMounted(() => {

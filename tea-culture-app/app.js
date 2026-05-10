@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express');
+const path = require('path');
 const cors = require('cors');
 
 const authRoutes = require('./routes/auth');
@@ -23,6 +24,10 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// 静态资源：将项目 images 目录暴露为 /uploads 和 /images
+app.use('/uploads', express.static(path.join(__dirname, 'images')));
+app.use('/images', express.static(path.join(__dirname, 'images')));
 
 // 挂载路由
 app.use('/api/auth', authRoutes);

@@ -1,13 +1,5 @@
 <template>
   <view class="events-admin-container">
-    <!-- 自定义导航栏 -->
-    <u-navbar 
-      title="活动管理"
-      :is-back="true"
-      @back="goBack"
-      :background="{ background: '#fff' }"
-    ></u-navbar>
-
     <!-- 添加按钮 -->
     <view class="add-btn-bar">
       <u-button 
@@ -520,7 +512,7 @@ const deleteEvent = (eventId) => {
 };
 
 const goBack = () => {
-  backToAdminHome();
+  uni.navigateBack({ delta: 1 });
 };
 </script>
 

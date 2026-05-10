@@ -15,10 +15,6 @@
 
     <!-- 茶叶购买 -->
     <view v-if="currentTab === 0" class="tea-shop">
-      <view class="banner">
-        <u-image src="/static/placeholders/banner.png" width="100%" height="300rpx"></u-image>
-      </view>
-      
       <u-loading-icon v-if="teaLoading" mode="circle" text="加载中..."></u-loading-icon>
       
       <view v-else class="product-list">
@@ -226,7 +222,7 @@
         </view>
         <view class="buy-actions">
           <u-button text="取消" @click="closeBuy"></u-button>
-          <u-button type="primary" text="确认购买" @click="() => { console.log('[test] 按钮点击'); submitBuy(); }"></u-button>
+          <u-button type="primary" text="确认购买" @click="submitBuy"></u-button>
         </view>
       </view>
     </u-popup>
@@ -236,7 +232,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
-import { request } from '@/utils/http.js';
+import { request, getServerHost } from '@/utils/http.js';
 
 const currentTab = ref(0);
 const tabs = ref([
@@ -262,6 +258,19 @@ const certEnrollPhone = ref('');
 const selectedCourse = ref(null);
 const enrolledCourseIds = ref(new Set());
 const enrollIdByCourseId = ref(new Map());
+const host = getServerHost();
+
+const resolveImage = (img) => {
+  if (!img) return '/static/placeholders/tea.png';
+  if (/^https?:\/\//i.test(img)) return img;
+  if (img.startsWith('/')) return host ? host + img : img;
+  if (/:\\|\\\\/.test(img) || img.indexOf('\\') !== -1) {
+    const parts = img.split(/\\|\//);
+    const name = parts[parts.length - 1];
+    return host ? `${host}/uploads/${name}` : `/uploads/${name}`;
+  }
+  return host ? `${host}/uploads/${img}` : `/uploads/${img}`;
+};
 
 // 茶叶商品
 const teaProducts = ref([]);
@@ -291,8 +300,8 @@ const loadTeaProducts = async () => {
       name: item.name,
       origin: item.origin || '产地直供',
       price: item.price,
-      sales: 0, // 后端暂无销量字段
-      image: item.image || ''
+      sales: 0,
+      image: resolveImage(item.image)
     }));
   } catch (e) {
     console.error('加载茶叶商品失败:', e);
@@ -352,7 +361,7 @@ const loadTeawareProducts = async () => {
         category,
         price: item.price,
         sales: 0,
-        image: item.image || ''
+        image: resolveImage(item.image)
       };
     });
   } catch (e) {
@@ -675,10 +684,6 @@ const goProductDetail = (id, type) => {
   }
 
   .tea-shop, .teaware-shop {
-    .banner {
-      margin-bottom: 20rpx;
-    }
-
     .category-filter {
       padding: 20rpx;
       background-color: #fff;

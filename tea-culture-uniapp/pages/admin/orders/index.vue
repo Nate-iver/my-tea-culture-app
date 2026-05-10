@@ -1,13 +1,5 @@
 <template>
   <view class="orders-admin-container">
-    <!-- 自定义导航栏 -->
-    <u-navbar 
-      title="订单管理"
-      :is-back="true"
-      @back="goBack"
-      :background="{ background: '#fff' }"
-    ></u-navbar>
-
     <!-- 状态筛选 -->
     <view class="filter-bar">
       <u-tag 
@@ -220,7 +212,7 @@ const deliverOrder = async (orderId) => {
 };
 
 const goBack = () => {
-  backToAdminHome();
+  uni.navigateBack({ delta: 1 });
 };
 </script>
 

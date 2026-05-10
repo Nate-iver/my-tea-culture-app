@@ -315,7 +315,7 @@ const formatTime = (timeStr) => {
 };
 
 const goBack = () => {
-  backToAdminHome();
+  uni.navigateBack({ delta: 1 });
 };
 </script>
 

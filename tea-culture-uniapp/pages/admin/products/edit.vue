@@ -1,11 +1,5 @@
 <template>
   <view class="product-edit-container">
-    <u-navbar 
-      title="产品编辑"
-      :is-back="true"
-      @back="goBack"
-    ></u-navbar>
-
     <view class="edit-content">
       <u-form 
         :model="formData" 
@@ -87,7 +81,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref } from 'vue';
+import { onLoad } from '@dcloudio/uni-app';
 import { request } from '@/utils/http.js';
 import { checkPermission, backToAdminHome } from '@/utils/auth.js';
 
@@ -105,16 +100,14 @@ const formData = ref({
   trace_code: ''
 });
 
-onMounted(() => {
+onLoad((options) => {
   if (!checkPermission('admin')) {
     return;
   }
   
   // 从路由参数中获取产品ID
-  const pages = getCurrentPages();
-  const currentPage = pages[pages.length - 1];
-  if (currentPage?.options?.id) {
-    productId.value = parseInt(currentPage.options.id);
+  if (options?.id) {
+    productId.value = parseInt(options.id);
     loadProduct();
   }
 });
@@ -192,7 +185,7 @@ const saveProduct = async () => {
 };
 
 const goBack = () => {
-  backToAdminHome();
+  uni.navigateBack({ delta: 1 });
 };
 </script>
 
