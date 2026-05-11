@@ -98,7 +98,7 @@
 - 后端：`tea-culture-app`（认证、业务逻辑、API 聚合）
 - AI 服务：`tea-ai-service`（文本向量化、嵌入服务）
 
-参考架构文档：`/home/runner/work/my-tea-culture-app/my-tea-culture-app/docs/architecture.md`。
+参考架构文档：`docs/architecture.md`。
 
 ### 3.2 模块设计
 
@@ -111,8 +111,8 @@
 
 数据库脚本路径：
 
-- `/home/runner/work/my-tea-culture-app/my-tea-culture-app/tea-culture-app/schema.sql`
-- `/home/runner/work/my-tea-culture-app/my-tea-culture-app/tea-culture-app/seed.sql`
+- `tea-culture-app/schema.sql`
+- `tea-culture-app/seed.sql`
 
 核心数据实体包括：`user`、`content`、`post`、`comment`、`product`、`tea_event`、`event_enroll`、`certificate_course`、`certificate_enroll`、`feedback`、`orders`。
 
@@ -131,7 +131,7 @@
 
 ### 4.1 AI 服务实现
 
-目录：`/home/runner/work/my-tea-culture-app/my-tea-culture-app/tea-ai-service`
+目录：`tea-ai-service`
 
 - `main.py`：提供 `/embed` 与 `/health` 接口。
 - `download_model.py`：下载并缓存 `shibing624/text2vec-base-chinese`。
@@ -144,7 +144,7 @@
 
 ### 4.2 后端实现
 
-目录：`/home/runner/work/my-tea-culture-app/my-tea-culture-app/tea-culture-app`
+目录：`tea-culture-app`
 
 后端入口为 `app.js`，统一挂载认证、内容、社区、活动、课程、反馈、订单等路由，并提供两个关键能力：
 
@@ -155,11 +155,11 @@
 
 - 优先使用 embedding + 余弦相似度。
 - 当向量服务不可用时回退关键词匹配。
-- 输出 top-3 结果并计算低置信度标记阈值（`LOW_CONFIDENCE_THRESHOLD=0.45`）。
+- 输出 top-3 结果并计算低置信度标记阈值（当前代码常量为 `LOW_CONFIDENCE_THRESHOLD=0.45`，以源码为准）。
 
 ### 4.3 前端实现
 
-目录：`/home/runner/work/my-tea-culture-app/my-tea-culture-app/tea-culture-uniapp`
+目录：`tea-culture-uniapp`
 
 前端基于 uni-app 实现多端页面与接口调用，负责用户操作入口、内容展示、问答交互及商城流程承载。前端与后端通过 REST 接口通信，保证业务模块解耦。
 
@@ -247,9 +247,9 @@
 ### A.1 AI 服务
 
 ```bash
-cd /home/runner/work/my-tea-culture-app/my-tea-culture-app/tea-ai-service
+cd tea-ai-service
 python -m venv .venv
-source .venv/bin/activate   # Windows 请使用 .\\.venv\\Scripts\\activate
+source .venv/bin/activate   # Windows 请使用 .\.venv\Scripts\activate
 pip install -r requirements.txt
 python download_model.py
 python main.py
@@ -259,7 +259,7 @@ python embed_data.py
 ### A.2 后端服务
 
 ```bash
-cd /home/runner/work/my-tea-culture-app/my-tea-culture-app/tea-culture-app
+cd tea-culture-app
 npm install
 npm start
 ```
@@ -267,7 +267,7 @@ npm start
 ### A.3 前端服务
 
 ```bash
-cd /home/runner/work/my-tea-culture-app/my-tea-culture-app/tea-culture-uniapp
+cd tea-culture-uniapp
 npm install
 # 按项目脚本在 HBuilderX 或对应命令中运行
 ```
