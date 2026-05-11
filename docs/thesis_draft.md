@@ -155,7 +155,7 @@
 
 - 优先使用 embedding + 余弦相似度。
 - 当向量服务不可用时回退关键词匹配。
-- 输出 Top-K 结果并计算低置信度标记阈值（当前默认 `K=3`，常量名为 `LOW_CONFIDENCE_THRESHOLD`，定义见 `tea-culture-app/services/searchService.js`）。
+- 输出 Top-K 结果并计算低置信度标记阈值（当前默认 `K=3`；低置信度分数阈值常量名为 `LOW_CONFIDENCE_THRESHOLD`，定义见 `tea-culture-app/services/searchService.js`）。
 
 ### 4.3 前端实现
 
@@ -257,7 +257,7 @@ python embed_data.py
 
 - Linux / macOS 激活命令：`source .venv/bin/activate`
 - Windows PowerShell 激活命令：`.\.venv\Scripts\activate`
-- Windows Command Prompt 激活命令：`.venv\\Scripts\\activate.bat`
+- Windows Command Prompt 激活命令：`.venv\Scripts\activate.bat`
 
 ### A.2 后端服务
 
