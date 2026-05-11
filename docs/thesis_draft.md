@@ -257,6 +257,7 @@ python embed_data.py
 
 - Linux / macOS 激活命令：`source .venv/bin/activate`
 - Windows PowerShell 激活命令：`.\.venv\Scripts\activate`
+- Windows Command Prompt 激活命令：`.venv\Scripts\activate.bat`
 
 ### A.2 后端服务
 
