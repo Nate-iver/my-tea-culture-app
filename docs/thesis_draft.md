@@ -155,7 +155,7 @@
 
 - 优先使用 embedding + 余弦相似度。
 - 当向量服务不可用时回退关键词匹配。
-- 输出 top-3 结果并计算低置信度标记阈值（当前代码常量为 `LOW_CONFIDENCE_THRESHOLD=0.45`，以源码为准）。
+- 输出 top-3 结果并计算低置信度标记阈值（当前代码常量为 `LOW_CONFIDENCE_THRESHOLD=0.45`，定义见 `tea-culture-app/services/searchService.js`，以源码为准）。
 
 ### 4.3 前端实现
 
@@ -249,7 +249,10 @@
 ```bash
 cd tea-ai-service
 python -m venv .venv
-source .venv/bin/activate   # Windows 请使用 .\.venv\Scripts\activate
+# Linux / macOS
+source .venv/bin/activate
+# Windows (PowerShell)
+# .\.venv\Scripts\activate
 pip install -r requirements.txt
 python download_model.py
 python main.py
