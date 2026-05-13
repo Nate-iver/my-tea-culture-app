@@ -26,6 +26,18 @@
         <u-text text="认证课程" size="12" color="#909399" margin="5rpx 0 0 0"></u-text>
       </view>
 
+      <view class="stat-card" @click="goPage('/pages/admin/content/tea-group')">
+        <u-icon name="file-text" color="#5d8a6a" size="40"></u-icon>
+        <u-text :text="stats.contentsTea" size="24" bold color="#303133" margin="10rpx 0 0 0"></u-text>
+        <u-text text="茶类内容" size="12" color="#909399" margin="5rpx 0 0 0"></u-text>
+      </view>
+
+      <view class="stat-card" @click="goPage('/pages/admin/content/course-group')">
+        <u-icon name="clock" color="#4caf50" size="40"></u-icon>
+        <u-text :text="stats.contentsCourse" size="24" bold color="#303133" margin="10rpx 0 0 0"></u-text>
+        <u-text text="课程内容" size="12" color="#909399" margin="5rpx 0 0 0"></u-text>
+      </view>
+
       <view class="stat-card" @click="goPage('/pages/admin/events/index')">
         <u-icon name="calendar" color="#2196f3" size="40"></u-icon>
         <u-text :text="stats.events" size="24" bold color="#303133" margin="10rpx 0 0 0"></u-text>
@@ -99,6 +111,25 @@
           customStyle="flex: 1;"
         ></u-button>
       </view>
+
+      
+
+      <view class="action-buttons" style="margin-top: 12rpx;">
+        <u-button
+          text="茶类内容管理"
+          type="primary"
+          icon="file-text"
+          @click="goPage('/pages/admin/content/tea-group')"
+          customStyle="flex: 1; margin-right: 10rpx;"
+        ></u-button>
+        <u-button
+          text="课程内容管理"
+          type="success"
+          icon="clock"
+          @click="goPage('/pages/admin/content/course-group')"
+          customStyle="flex: 1;"
+        ></u-button>
+      </view>
     </view>
 
     <!-- 最近的订单 -->
@@ -161,10 +192,13 @@ import { request } from '@/utils/http.js';
 import { checkPermission, logout, getUserInfo } from '@/utils/auth.js';
 
 const userInfo = ref({});
-const stats = ref({
+  const stats = ref({
   orders: 0,
   products: 0,
   certificates: 0,
+  contents: 0,
+  contentsTea: 0,
+  contentsCourse: 0,
   events: 0,
   users: 0,
   feedback: 0
@@ -207,10 +241,11 @@ const getStatusColor = (status) => {
 const loadDashboard = async () => {
   try {
     // 加载统计数据
-    const [ordersRes, productsRes, certificatesRes, eventsRes, usersRes, feedbackRes] = await Promise.all([
+    const [ordersRes, productsRes, certificatesRes, contentsRes, eventsRes, usersRes, feedbackRes] = await Promise.all([
       request({ url: '/orders', method: 'GET', data: { page: 1, pageSize: 5 } }),
       request({ url: '/products', method: 'GET', data: { page: 1, pageSize: 1 } }),
       request({ url: '/certificates', method: 'GET', data: { page: 1, pageSize: 1 } }),
+      request({ url: '/content', method: 'GET', data: { page: 1, pageSize: 200 } }),
       request({ url: '/events', method: 'GET', data: { page: 1, pageSize: 1 } }),
       request({ url: '/users', method: 'GET', data: { page: 1, pageSize: 1 } }),
       request({ url: '/feedback', method: 'GET', data: { page: 1, pageSize: 1 } })
@@ -219,6 +254,7 @@ const loadDashboard = async () => {
     console.log('[admin-dashboard] 订单响应:', ordersRes);
     console.log('[admin-dashboard] 产品响应:', productsRes);
     console.log('[admin-dashboard] 课程响应:', certificatesRes);
+    console.log('[admin-dashboard] 内容响应:', contentsRes);
     console.log('[admin-dashboard] 活动响应:', eventsRes);
     console.log('[admin-dashboard] 用户响应:', usersRes);
     console.log('[admin-dashboard] 反馈响应:', feedbackRes);
@@ -234,6 +270,13 @@ const loadDashboard = async () => {
     // 解析认证课程数据 - 使用 total 字段或数组长度
     const certList = Array.isArray(certificatesRes) ? certificatesRes : (certificatesRes.data || certificatesRes.list || []);
     stats.value.certificates = certificatesRes.total || certList.length;
+
+    const contentList = Array.isArray(contentsRes) ? contentsRes : (contentsRes.data || contentsRes.list || []);
+    const teaTypes = ['tea_category', 'brewing', 'origin_culture'];
+    const courseTypes = ['course', 'tea_ware', 'tea_table'];
+    stats.value.contents = contentList.length;
+    stats.value.contentsTea = contentList.filter((i) => teaTypes.includes(i.type)).length;
+    stats.value.contentsCourse = contentList.filter((i) => courseTypes.includes(i.type)).length;
 
     // 解析活动数据 - 使用 total 字段或数组长度
     const eventsList = Array.isArray(eventsRes) ? eventsRes : (eventsRes.data || eventsRes.list || []);
